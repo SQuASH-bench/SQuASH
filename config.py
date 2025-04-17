@@ -196,8 +196,8 @@ class PathConfig:
             'gcn_data': os.path.join(self.base_path, 'data/processed_data/', 'gcn_processed_data'),
             'rf_data': os.path.join(self.base_path, 'data', 'rf_data'),
             'test_data': os.path.join(self.base_path, 'data', 'test_data'),
-            'trained_models': os.path.join(self.base_path, 'results', 'trained_models'),
-            'benchmark': os.path.join(self.base_path, 'results', 'benchmark'),
-            'plots': os.path.join(self.base_path, 'results', 'plots'),
+            'trained_models': os.path.join(self.base_path, 'surrogate_models', 'trained_models'),
+            'benchmark': os.path.join(self.base_path, 'benchmark', 'results'),
+            'plots': os.path.join(self.base_path, 'benchmark/results', 'plots'),
         }
         print(self.paths['gcn_data'])
