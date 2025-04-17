@@ -39,19 +39,7 @@ This repository provides code for converting quantum circuits into graph represe
 
 ---
 
-## Requirements
 
-- Python 3.x
-- PyTorch and torch-geometric
-- Qiskit
-- NetworkX, Matplotlib
-- scikit-learn, NumPy, SciPy
-- Optuna
-- tqdm
-
-*(Check the `requirements.txt` for a full list of dependencies.)*
-
----
 
 ## Usage
 
@@ -103,13 +91,3 @@ python tune_rf.py
 ## Evaluating and Visualizing Results
 
 The training scripts record `MSE`, `Spearman's rho`, and `R2` over epochs. Use the provided plotting functions to visualize performance metrics.
-
-## Getting Started**
-
-1. **Install Dependencies:**
-- Create and activate a virtual environment.
-- Install required packages from requirements.txt.
-2.  **Configure Settings:**
- - Edit the configuration files in the config/ directory if needed (e.g., adjust gate sets, model parameters, file paths).
-3. **Run an Example:**
-      Follow one of the usage examples above to convert a circuit, train a model, or tune hyperparameters.
