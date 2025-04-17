@@ -177,7 +177,7 @@ def fit(model_name, params, train_loader, val_loader, test_loader, loss_fn):
 if __name__ == "__main__":
     device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
 
-    gate_set = 'gs1'
+    gate_set = 'ghz_a'
     gate_set_name = "test_dataset_ghz_a"  # Dataset name based on gate set.
     model_name = f'{gate_set_name}'
     model_conf = f'gcn_{gate_set}'

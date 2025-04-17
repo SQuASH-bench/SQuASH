@@ -76,7 +76,7 @@ def get_model_config(config_name, device='cpu'):
     Retrieve the model configuration for a specific model name.
     """
     configs = {
-        "gcn_gs1": {
+        "gcn_ghz_a": {
             'device': device,
             'emb_dim': 1200,
             'layer_num': 8,
@@ -95,7 +95,7 @@ def get_model_config(config_name, device='cpu'):
             'metric': 'spearman',
             'graph_pooling': 'max',
         },
-        "gcn_gs2": {
+        "gcn_ghz_b": {
             'device': device,
             'emb_dim': 1050,
             'layer_num': 8,
@@ -114,7 +114,7 @@ def get_model_config(config_name, device='cpu'):
             'metric': 'spearman',
             'graph_pooling': 'attention',
         },
-        "gcn_ml": {
+        "gcn_ls_a": {
             'device': device,
             'emb_dim': 1050,
             'layer_num': 8,
@@ -133,7 +133,7 @@ def get_model_config(config_name, device='cpu'):
             'metric': 'spearman',
             'graph_pooling': 'attention',
         },
-        "random_forest_gs1": {
+        "random_forest_ghz_a": {
             'device': device,
             'n_estimators': 350,
             'max_depth': 30,
@@ -147,7 +147,7 @@ def get_model_config(config_name, device='cpu'):
             'num_workers': 0,
             'metric': 'mse',
         },
-        "random_forest_gs2": {
+        "random_forest_ghz_b": {
             'device': device,
             'n_estimators': 325,
             'max_depth': 30,
@@ -161,7 +161,7 @@ def get_model_config(config_name, device='cpu'):
             'num_workers': 0,
             'metric': 'spearman',
         },
-        "random_forest_ml": {
+        "random_forest_ls_a": {
             'device': device,
             'n_estimators': 325,
             'max_depth': 30,
@@ -193,7 +193,7 @@ class PathConfig:
         # Define subdirectories for tuning studies, datasets, models, benchmarks, and plots.
         self.paths = {
             'optuna_studies': os.path.join(self.base_path, 'surrogate_models/tuning', 'studies'),
-            'gcn_data': os.path.join(self.base_path, 'data', 'gcn_data'),
+            'gcn_data': os.path.join(self.base_path, 'data/processed_data/', 'gcn_processed_data'),
             'rf_data': os.path.join(self.base_path, 'data', 'rf_data'),
             'test_data': os.path.join(self.base_path, 'data', 'test_data'),
             'trained_models': os.path.join(self.base_path, 'results', 'trained_models'),
