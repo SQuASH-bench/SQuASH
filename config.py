@@ -23,20 +23,20 @@ class QCConfig:
 
     Attributes:
         max_param_gate (int): Maximum number of parameters for a gate.
-        gate_set_1 (list): Allowed gates for configuration 1, e.g., ['cx', 'h', 'rx', 'ry', 'rz', 'id'].
-        features_gs1 (int): Number of features for gate set 1.
-        gate_set_2 (list): Allowed gates for configuration 2, e.g., ['cz', 'id', 'rx', 'rz', 'rzz', 'sx', 'x'].
-        features_gs2 (int): Number of features for gate set 2.
-        gate_set_ml (list): Allowed gates for machine learning models.
-        features_ml (int): Number of features for the ML gate set.
+        gate_set_ghz_a (list): Allowed gates for configuration 1, e.g., ['cx', 'h', 'rx', 'ry', 'rz', 'id'].
+        features_ghz_a (int): Number of features for gate set 1.
+        gate_set_ghz_b (list): Allowed gates for configuration 2, e.g., ['cz', 'id', 'rx', 'rz', 'rzz', 'sx', 'x'].
+        features_ghz_b (int): Number of features for gate set 2.
+        gate_set_ghz_a (list): Allowed gates for machine learning models.
+        features_ls_a (int): Number of features for the ML gate set.
     """
     max_param_gate: int = 1
-    gate_set_1: list = field(default_factory=lambda: ['cx', 'h', 'rx', 'ry', 'rz', 'id'])
-    features_gs1: int = 7
-    gate_set_2: list = field(default_factory=lambda: ['cz', 'id', 'rx', 'rz', 'rzz', 'sx', 'x'])
-    features_gs2: int = 8
-    gate_set_ml: list = field(default_factory=lambda: ['cx', 'h', 'rx', 'ry', 'swap', 'crx', 'cry'])
-    features_ml: int = 8
+    gate_set_ghz_a: list = field(default_factory=lambda: ['cx', 'h', 'rx', 'ry', 'rz', 'id'])
+    features_ghz_a: int = 7
+    gate_set_ghz_b: list = field(default_factory=lambda: ['cz', 'id', 'rx', 'rz', 'rzz', 'sx', 'x'])
+    features_ghz_b: int = 8
+    gate_set_ls_a: list = field(default_factory=lambda: ['cx', 'h', 'rx', 'ry', 'swap', 'crx', 'cry'])
+    features_ls_a: int = 8
 
 
 @dataclass
@@ -81,7 +81,7 @@ def get_model_config(config_name, device='cpu'):
             'emb_dim': 1200,
             'layer_num': 8,
             'qubit_num': 3,
-            'num_node_features': QCConfig().features_gs1,
+            'num_node_features': QCConfig().features_ghz_a,
             'drop_ratio': 0.012714767230404513,
             'batch_size': 32,
             'epochs': 3,
@@ -100,7 +100,7 @@ def get_model_config(config_name, device='cpu'):
             'emb_dim': 1050,
             'layer_num': 8,
             'qubit_num': 3,
-            'num_node_features': QCConfig().features_gs2,
+            'num_node_features': QCConfig().features_ghz_b,
             'drop_ratio': 0.0644893118913786,
             'batch_size': 128,
             'epochs': 100,
@@ -119,7 +119,7 @@ def get_model_config(config_name, device='cpu'):
             'emb_dim': 1050,
             'layer_num': 8,
             'qubit_num': 4,
-            'num_node_features': QCConfig().features_gs2,
+            'num_node_features': QCConfig().features_ghz_b,
             'drop_ratio': 0.0644893118913786,
             'batch_size': 32,
             'epochs': 100,

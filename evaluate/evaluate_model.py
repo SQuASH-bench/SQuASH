@@ -30,11 +30,11 @@ if __name__ == "__main__":
     device = device_config.device
     path_config = PathConfig()
     if gate_set == 'gs1':
-        gate_mapping = QCConfig().gate_set_1
+        gate_mapping = QCConfig().gate_set_ghz_a
     elif gate_set == 'gs2':
-        gate_mapping = QCConfig().gate_set_2
+        gate_mapping = QCConfig().gate_set_ghz_b
     elif gate_set == 'ml':
-        gate_mapping = QCConfig().gate_set_ml
+        gate_mapping = QCConfig().gate_set_ls_a
 
 
     if rf:

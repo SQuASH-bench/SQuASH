@@ -28,7 +28,7 @@ def load_trained_model(model_name: str) -> RegGNN:
         freeze_gnn=False,
     )
 
-    # Construct the model file path and load state dictionary
+    # construct the model file path and load state dictionary
     model_path = os.path.join(paths['la'], f'{model_name}.pth')
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
@@ -67,7 +67,7 @@ def evaluate_circuit(circuit, model, gate_set=None, proxy=False) -> float:
     if gate_set is None:
         raise Exception("Error: The gate_set parameter cannot be None. Please provide a valid gate set.")
 
-    # Convert the Qiskit circuit to a compatible data object
+    # convert the Qiskit circuit to a compatible data object
     data_qc = qiskit_to_data_object(circuit, gate_set=gate_set, proxy=proxy)
 
     with torch.no_grad():
@@ -77,25 +77,23 @@ def evaluate_circuit(circuit, model, gate_set=None, proxy=False) -> float:
 
 
 if __name__ == "__main__":
-    # Retrieve configuration paths from PathConfig
+    # retrieve configuration paths from PathConfig
     paths = PathConfig().paths
 
-    # Model identifier to be used for loading
+    # model identifier to be used for loading
     model_name = 'gs2_21_02'
     model = load_trained_model(model_name)
 
-    # Define the location of the pickle file containing the quantum circuit and its fidelity
+    # define the location of the pickle file containing the quantum circuit and its performance
     circuit_file = os.path.join(paths['rl_data'], 'logs_02_2024', 'unique_circuits', '0', 'qc_rl_754_7000.pkl')
 
-    # Load the circuit and its fidelity from the pickle file
+    # load the circuit and its performance from the pickle file
     with open(circuit_file, 'rb') as file:
         loaded_data = pickle.load(file)
         circuit = loaded_data.get("initial_circuit")
         fidelity = loaded_data.get("fidelity")
 
-    # Evaluate the circuit using the loaded model and gate set from QCConfig
-    prediction = evaluate_circuit(circuit, model, QCConfig().gate_set_2)
-
-    # Output the predicted and actual fitness values
-    print(f"Predicted fitness for the circuit: {prediction}")
-    print(f"Ground truth fitness: {fidelity}")
+    # evaluate the circuit using the loaded model and gate set from QCConfig
+    prediction = evaluate_circuit(circuit, model, QCConfig().gate_set_ghz_b)
+    print(f"Predicted performance for the circuit: {prediction}")
+    print(f"Ground truth performance: {fidelity}")

@@ -76,7 +76,7 @@ if __name__ == "__main__":
         circuit = loaded_data.get("initial_circuit")
         fidelity = loaded_data.get("fidelity")
 
-    prediction = evaluate_circuit(rf_model, circuit, fidelity, QCConfig().gate_set_2)
+    prediction = evaluate_circuit(rf_model, circuit, fidelity, QCConfig().gate_set_ghz_b)
 
     print(f"Predicted fitness for the circuit: {prediction}")
     print(f"Ground truth fitness: {fidelity}")

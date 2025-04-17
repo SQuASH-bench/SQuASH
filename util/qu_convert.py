@@ -392,7 +392,7 @@ if __name__ == '__main__':
     qc_config = QCConfig()
 
     # Process the circuit to create a Data object.
-    data = process_graph(circuit, fidelity=1, gate_set=qc_config.gate_set_1)
+    data = process_graph(circuit, fidelity=1, gate_set=qc_config.gate_set_ghz_a)
 
     # Print circuit and converted data attributes.
     print(circuit)
@@ -406,4 +406,4 @@ if __name__ == '__main__':
     print(data.y)
 
     # Visualize the constructed graph.
-    visualize_graph(data, gate_set=qc_config.gate_set_1)
+    visualize_graph(data, gate_set=qc_config.gate_set_ghz_a)

@@ -160,7 +160,7 @@ if __name__ == "__main__":
     qc_config = QCConfig()
 
     # Convert the circuit into a tensor feature matrix with a corresponding fidelity value.
-    X, y = circuit_to_tensor(qasm_example, 0.5, qc_config.gate_set_1, depth=22)
+    X, y = circuit_to_tensor(qasm_example, 0.5, qc_config.gate_set_ghz_a, depth=22)
 
     print("Feature array shape:", X.shape)
     print(X)
