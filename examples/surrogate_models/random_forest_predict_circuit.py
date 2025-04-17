@@ -65,13 +65,13 @@ def evaluate_circuit(circuit, model, fidelity, gate_set=None):
 
 def get_circuit_file_and_gate_set(model_name: str):
     if model_name == "random_forest_gs1":
-        gate_set = config.get("gates_set1")
-        circuit_file = '../../random_forest/example_circuit_gs1.pkl'
+        gate_set = config.get("gates_ghz_a")
+        circuit_file = '../../random_forest/example_circuit_ghz_a.pkl'
     elif model_name == "random_forest_gs2":
-        gate_set = config.get("gates_set2")
-        circuit_file = '../../random_forest/example_circuit_gs2.pkl'
+        gate_set = config.get("gates_ghz_b")
+        circuit_file = '../../random_forest/example_circuit_ghz_b.pkl'
     elif model_name == "random_forest_ml":
-        gate_set = config.get("gates_ml")
+        gate_set = config.get("gates_ls_a")
         circuit_file = '../../random_forest/example_circuit_ml.pkl'
     else:
         raise ValueError("Unknown model name provided.")

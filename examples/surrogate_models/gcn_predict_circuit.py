@@ -68,14 +68,14 @@ def evaluate_circuit(circuit, model, gate_set):
 
 
 def get_circuit_file_and_gate_set(model_name: str):
-    if model_name == "gcn_gs1":
-        gate_set = config.get("gates_set1")
+    if model_name == "gcn_ghz_a":
+        gate_set = config.get("gates_ghz_a")
         circuit_file = 'example_circuit_ghz_a.pkl'
-    elif model_name == "gcn_gs2":
-        gate_set = config.get("gates_set2")
+    elif model_name == "gcn_ghz_b":
+        gate_set = config.get("gates_ghz_b")
         circuit_file = 'example_circuit_ghz_b.pkl'
-    elif model_name == "gcn_ml":
-        gate_set = config.get("gates_ml")
+    elif model_name == "gcn_ls_a":
+        gate_set = config.get("gates_ls_a")
         circuit_file = 'example_circuit_ls_a.pkl'
     else:
         raise ValueError("Unknown model name provided.")

@@ -43,11 +43,11 @@ if __name__ == '__main__':
     if model == 'GCN':
         # For GCN, the data is saved in the 'test_data' directory.
         input_path = f"your/path/{data_name}"
-        output_path = os.path.join(base_dir, 'data', 'test_data', f'{data_name}.pt')
+        output_path = os.path.join(base_dir, '../data', 'test_data', f'{data_name}.pt')
     elif model == 'RandomForest':
         # For RandomForest, the data is saved in the 'rf_data' directory.
         input_path = f"your/path/{data_name}"
-        output_path = os.path.join(base_dir, 'data', 'rf_data', f'{data_name}.pt')
+        output_path = os.path.join(base_dir, '../data', 'rf_data', f'{data_name}.pt')
     else:
         raise ValueError('Unknown model')
 
