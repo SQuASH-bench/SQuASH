@@ -72,7 +72,7 @@ Train a GNN or Random Forest model using the provided training scripts.
 
 **Example (for Random Forest):**
 ```bash
-python surrogate_gcn.py
+python gcn_runner.py
 ```
 
 Similarly, use the GNN training script (surrogate_rf.py) to train a RandomForestRegressor model.

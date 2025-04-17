@@ -2,7 +2,7 @@ import json
 import torch
 import pickle
 
-from surrogate_models.architectures.gnn.gnn import RegGNN
+from surrogate_models.architectures.gnn.gnn_model import RegGNN
 from util.qu_convert import qiskit_to_data_object
 
 

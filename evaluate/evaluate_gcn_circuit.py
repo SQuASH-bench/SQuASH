@@ -2,7 +2,7 @@ import os
 import pickle
 import torch
 
-from surrogate_models.architectures.gnn.gnn import RegGNN
+from surrogate_models.architectures.gnn.gnn_model import RegGNN
 from util.qu_convert import qiskit_to_data_object
 
 from config import DeviceConfig, get_model_config, PathConfig, QCConfig

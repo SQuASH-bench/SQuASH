@@ -8,8 +8,8 @@ import torch
 from torch_geometric.loader import DataLoader
 from scipy.stats import pearsonr, spearmanr
 
-from surrogate_rf import prepare_data
-from surrogate_models.architectures.gnn.gnn import RegGNN
+from surrogate_models.architectures.random_forest.random_forest_runner import prepare_data
+from surrogate_models.architectures.gnn.gnn_model import RegGNN
 from config import PathConfig
 
 

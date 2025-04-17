@@ -9,7 +9,7 @@ import numpy as np
 
 from torch_geometric.loader import DataLoader
 
-from surrogate_models.architectures.gnn.gnn import RegGNN
+from surrogate_models.architectures.gnn.gnn_model import RegGNN
 from util import split
 from util.data_loader import load_data
 from config import get_model_config, PathConfig
