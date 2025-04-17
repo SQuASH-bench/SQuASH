@@ -20,5 +20,4 @@ build/
 Thumbs.db
 
 
-data/**/*.db
-data/**/*.pkl
+data
