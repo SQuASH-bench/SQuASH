@@ -197,5 +197,5 @@ def load_data(path):
         print(f"Data successfully loaded from {path}")
         return data
     except Exception as e:
-        print(f"An error occurred while loading the data: {str(e)}")
+        print(f"An error occurred while loading the data from path {path}: {str(e)}")
         return None

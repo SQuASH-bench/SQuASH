@@ -29,7 +29,8 @@ def load_trained_model(model_name: str) -> RegGNN:
     )
 
     # construct the model file path and load state dictionary
-    model_path = os.path.join(paths['la'], f'{model_name}.pth')
+    model_path = os.path.join(paths['trained_models'], f'{model_name}.pth')
+    print(f"Load model from {model_path}")
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
     model.eval()

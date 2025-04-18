@@ -76,6 +76,25 @@ def get_model_config(config_name, device='cpu'):
     Retrieve the model configuration for a specific model name.
     """
     configs = {
+        "gcn_test_dataset_ghz_a_2025-04-17_22-45-32":{
+                'device': device,
+                'emb_dim': 1200,
+                'layer_num': 8,
+                'qubit_num': 3,
+                'num_node_features': QCConfig().features_ghz_a,
+                'drop_ratio': 0.012714767230404513,
+                'batch_size': 32,
+                'epochs': 1,
+                'lr': 0.00042048670814195114,
+                'decay': 1.2239395743425164e-06,
+                'JK': 'mean',
+                'seed': 42,
+                'runseed': 42,
+                'num_workers': 0,
+                'patience': 7,
+                'metric': 'spearman',
+                'graph_pooling': 'max',
+        },
         "gcn_ghz_a": {
             'device': device,
             'emb_dim': 1200,
@@ -84,7 +103,7 @@ def get_model_config(config_name, device='cpu'):
             'num_node_features': QCConfig().features_ghz_a,
             'drop_ratio': 0.012714767230404513,
             'batch_size': 32,
-            'epochs': 3,
+            'epochs': 1,
             'lr': 0.00042048670814195114,
             'decay': 1.2239395743425164e-06,
             'JK': 'mean',
@@ -195,9 +214,8 @@ class PathConfig:
             'optuna_studies': os.path.join(self.base_path, 'surrogate_models/tuning', 'studies'),
             'gcn_data': os.path.join(self.base_path, 'data/processed_data/', 'gcn_processed_data'),
             'rf_data': os.path.join(self.base_path, 'data', 'rf_data'),
-            'test_data': os.path.join(self.base_path, 'data', 'test_data'),
+#            'test_data': os.path.join(self.base_path, 'data', 'test_data'),
             'trained_models': os.path.join(self.base_path, 'surrogate_models', 'trained_models'),
             'benchmark': os.path.join(self.base_path, 'benchmark', 'results'),
-            'plots': os.path.join(self.base_path, 'benchmark/results', 'plots'),
+#            'plots': os.path.join(self.base_path, 'benchmark/results', 'plots'),
         }
-        print(self.paths['gcn_data'])

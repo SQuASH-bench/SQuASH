@@ -1,6 +1,7 @@
 import os
 
 from config import QCConfig
+from util.config_utils import get_gate_set_by_name
 from util.data_loader import create_data, save_data
 
 """
@@ -15,19 +16,6 @@ This script uses the configuration defined in QCConfig and dataset utility funct
 Optionally, users may choose to load data from a database using create_data_from_database (currently commented).
 """
 
-
-def get_gate_set_by_name(gate_set_name):
-    if gate_set_name == 'gate_set_ghz_a':
-        gs = qc_config.gate_set_ghz_a
-    elif gate_set_name == 'gate_set_ghz_b':
-        gs = qc_config.gate_set_ghz_b
-    elif gate_set_name == 'gate_set_ls_a':
-        gs = qc_config.gate_set_ls_a
-    else:
-        raise ValueError(f"Unknown gate set name: {gate_set_name}")
-    return gs
-
-
 if __name__ == '__main__':
     # Load quantum circuit configuration
     qc_config = QCConfig()
@@ -38,16 +26,7 @@ if __name__ == '__main__':
     model = 'GCN'  # Options: 'RandomForest' or 'GCN'
     proxy = False
 
-    # Select the appropriate gate set from the configuration based on gate_set_name.
-    if gate_set_name == 'gate_set_ghz_a':
-        gs = qc_config.gate_set_ghz_a
-    elif gate_set_name == 'gate_set_ghz_b':
-        gs = qc_config.gate_set_ghz_b
-    elif gate_set_name == 'gate_set_ls_a':
-        gs = qc_config.gate_set_ls_a
-    else:
-        raise ValueError(f"Unknown gate set name: {gate_set_name}")
-
+    gs = get_gate_set_by_name(gate_set_name)
     # Determine the base directory of the current script.
     base_dir = os.path.dirname(os.path.abspath(__file__))
 

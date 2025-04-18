@@ -60,6 +60,7 @@ def compute_metrics(predicted, actual, label="All Data", tolerance=0.1):
         "accuracy": accuracy
     }
 
+
 # --------------------- Model Loading and Evaluation --------------------- #
 
 def load_rf_model(model_name):
@@ -70,6 +71,7 @@ def load_rf_model(model_name):
         model = pickle.load(f)
     return model
 
+
 def evaluate_rf(dataset, model):
     """
     Evaluates a RandomForest model on a dataset.
@@ -79,6 +81,7 @@ def evaluate_rf(dataset, model):
     X, y = prepare_data(dataset)
     predicted = model.predict(X)
     return np.array(predicted), np.array(y)
+
 
 def load_gnn_model(model_path, config):
     """Loads a trained GNN model from"""
@@ -98,6 +101,7 @@ def load_gnn_model(model_path, config):
     model.eval()
     return model
 
+
 def evaluate_gnn(circuits, model, config):
     device = config.device
     loader = DataLoader(circuits, batch_size=config.batch_size, shuffle=False)
@@ -115,6 +119,7 @@ def evaluate_gnn(circuits, model, config):
             actual_scores.extend(act)
 
     return np.array(predicted_scores), np.array(actual_scores)
+
 
 # --------------------- Gate Analysis Utilities (GNN only) --------------------- #
 
@@ -137,7 +142,11 @@ def get_gates(data, gate_mapping):
             gates.append(gate_name)
     return gates
 
-def plot_gate_usage_bar(gate_counts, title="Gate Usage in Problem Circuits", color=None, model_name=None):
+
+def plot_gate_usage_bar(gate_counts, title="Gate Usage in Problem Circuits", color=None, model_name=None,
+                        path_config=None):
+    if path_config is None:
+        path_config = PathConfig()
     sns.set_theme(style="darkgrid")
     if not gate_counts:
         print("No gates to plot.")
@@ -152,7 +161,7 @@ def plot_gate_usage_bar(gate_counts, title="Gate Usage in Problem Circuits", col
     ax.set_ylabel("Usage Count", fontsize=14)
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
-    plt.savefig(f"../results/plots/gcn_{model_name}_gates.png")
+    plt.savefig(os.path.join(path_config.paths['benchmark'], "plots", f'{model_name}_gate_usage.png'))
     plt.show()
 
 
@@ -212,7 +221,6 @@ def analyze_circuits(circuits, predicted, actual, gate_mapping, top_percent,
         print("\nNo gates found among these circuits.")
 
     if output_dir and problem_details:
-        os.makedirs(output_dir, exist_ok=True)
         details_path = os.path.join(output_dir, f"{file_prefix}_details.csv")
         df_details = pd.DataFrame(problem_details)
         df_details['gates_used'] = df_details['gates_used'].apply(lambda glist: ",".join(glist))
@@ -226,115 +234,119 @@ def analyze_circuits(circuits, predicted, actual, gate_mapping, top_percent,
 
     return problem_details
 
-def analyze_gate_features(circuits, predicted_scores, actual_scores, gate_mapping, output_dir=None, color=None, model_name=None):
-    errors = np.abs(predicted_scores - actual_scores)
-    all_gates = set()
-    for circuit in circuits:
-        all_gates.update(get_gates(circuit, gate_mapping))
-    all_gates = sorted(all_gates)
 
+def analyze_gate_features(circuits, predicted_scores, actual_scores, gate_mapping,
+                          color=None, model_name="model", output_dir=None):
+
+    # Step 1: Compute absolute errors
+    errors = np.abs(np.array(predicted_scores) - np.array(actual_scores))
+
+    # Step 2: Gather all gates across all circuits
+    all_gates = sorted({gate for circuit in circuits for gate in get_gates(circuit, gate_mapping)})
+
+    # Step 3: Construct DataFrame with binary gate presence and errors
     data_list = []
-    for i, circuit in enumerate(circuits):
-        row_dict = {"abs_error": errors[i]}
-        g_list = get_gates(circuit, gate_mapping)
-        for gate in all_gates:
-            row_dict[f"has_{gate}"] = int(gate in g_list)
-        data_list.append(row_dict)
+    for error, circuit in zip(errors, circuits):
+        gates = get_gates(circuit, gate_mapping)
+        row = {f"has_{gate}": int(gate in gates) for gate in all_gates}
+        row["abs_error"] = error
+        data_list.append(row)
+
     df = pd.DataFrame(data_list)
 
-    rows = []
+    # Step 4: Analyze error impact per gate
+    stats = []
     for gate in all_gates:
         col = f"has_{gate}"
-        mask_present = (df[col] == 1)
-        mask_absent = (df[col] == 0)
-        if mask_present.sum() == 0:
-            continue
-        mean_err_present = df.loc[mask_present, "abs_error"].mean()
-        mean_err_absent = df.loc[mask_absent, "abs_error"].mean() if mask_absent.sum() > 0 else np.nan
-        diff_mean = mean_err_present - mean_err_absent
-        corr_val, _ = pearsonr(df[col], df["abs_error"])
-        rows.append({
+        if df[col].sum() == 0:
+            continue  # skip unused gates
+
+        mean_present = df.loc[df[col] == 1, "abs_error"].mean()
+        mean_absent = df.loc[df[col] == 0, "abs_error"].mean() if (df[col] == 0).sum() > 0 else np.nan
+        diff = mean_present - mean_absent
+        corr, _ = pearsonr(df[col], df["abs_error"])
+
+        stats.append({
             "gate": gate,
-            "count_present": int(mask_present.sum()),
-            "mean_err_present": mean_err_present,
-            "mean_err_absent": mean_err_absent,
-            "diff_mean_err": diff_mean,
-            "corr_err_presence": corr_val
+            "count_present": int(df[col].sum()),
+            "mean_err_present": mean_present,
+            "mean_err_absent": mean_absent,
+            "diff_mean_err": diff,
+            "corr_err_presence": corr
         })
 
-    df_gate_stats = pd.DataFrame(rows).sort_values("diff_mean_err", ascending=False)
+    df_stats = pd.DataFrame(stats).sort_values("diff_mean_err", ascending=False)
 
-    sns.set_theme(style="darkgrid")
-    plt.figure(figsize=(10, 6))
-    ax = sns.barplot(data=df_gate_stats, x="gate", y="diff_mean_err", color=color)
-    ax.set_title("Gate Presence vs. Error", fontsize=16)
-    ax.set_ylabel("Difference in Mean Abs Error (Present - Absent)", fontsize=14)
-    plt.xticks(rotation=45, ha='right')
-    plt.tight_layout()
-    plt.show()
-    plt.savefig("../results/plots/gcn_{model_name}_gate.png")
+    # Step 5: Plotting
+    if not df_stats.empty:
+        sns.set_theme(style="darkgrid")
+        plt.figure(figsize=(10, 6))
+        ax = sns.barplot(data=df_stats, x="gate", y="diff_mean_err", color=color)
+        ax.set_title("Gate Presence vs. Error", fontsize=16)
+        ax.set_ylabel("Δ Mean Abs Error (Present - Absent)", fontsize=14)
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, f'{model_name}_gate_features.png'))
+        plt.show()
+    else:
+        print("[WARN] No gates to visualize. df_stats is empty.")
 
-    if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
-        stats_path = os.path.join(output_dir, "gate_feature_stats.csv")
-        df_gate_stats.to_csv(stats_path, index=False)
-        print(f"[INFO] Saved gate feature stats to: {stats_path}")
+    # Step 6: Save results
+    stats_path = os.path.join(output_dir, "gate_feature_stats.csv")
+    df_stats.to_csv(stats_path, index=False)
+    print(f"[INFO] Saved plots and gate feature stats to: {stats_path}")
 
-    return df_gate_stats
+    return df_stats
+
 
 def analyze_error_by_fidelity(actual_scores, predicted_scores, num_bins=10, output_dir=None):
-    errors = np.abs(predicted_scores - actual_scores)
-    bins = np.linspace(0, 1, num_bins + 1)
-    indices = np.digitize(actual_scores, bins)
+    errors = np.abs(np.array(predicted_scores) - np.array(actual_scores))
 
-    bin_stats = []
-    for bin_idx in range(1, len(bins)):
-        in_bin = (indices == bin_idx)
-        count_in_bin = in_bin.sum()
-        if count_in_bin == 0:
-            bin_stats.append({
-                "fidelity_bin_start": bins[bin_idx - 1],
-                "fidelity_bin_end": bins[bin_idx],
-                "mean_abs_error": np.nan,
-                "count": 0
-            })
-        else:
-            mean_err = errors[in_bin].mean()
-            bin_stats.append({
-                "fidelity_bin_start": bins[bin_idx - 1],
-                "fidelity_bin_end": bins[bin_idx],
-                "mean_abs_error": mean_err,
-                "count": int(count_in_bin)
-            })
+    # Use pandas cut to create fidelity bins
+    df = pd.DataFrame({
+        "actual": actual_scores,
+        "error": errors
+    })
+    df["fidelity_bin"] = pd.cut(df["actual"], bins=num_bins)
 
-    df_fidelity_error = pd.DataFrame(bin_stats)
-    df_fidelity_error["bin_mid"] = (df_fidelity_error["fidelity_bin_start"] + df_fidelity_error["fidelity_bin_end"]) / 2
+    # Aggregate error by bin
+    df_stats = df.groupby("fidelity_bin").agg(
+        mean_abs_error=("error", "mean"),
+        count=("error", "count")
+    ).reset_index()
 
+    # Calculate midpoints of bins
+    df_stats["bin_mid"] = df_stats["fidelity_bin"].apply(lambda x: x.mid)
+
+    # Plot
     sns.set_theme(style="darkgrid")
-    plt.figure(figsize=(8, 5))
-    ax = sns.lineplot(
-        data=df_fidelity_error,
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sns.lineplot(
+        data=df_stats,
         x="bin_mid",
         y="mean_abs_error",
         marker="o",
         color="salmon",
-        label="Mean Abs Error"
+        label="Mean Abs Error",
+        ax=ax
     )
     ax.set_xlabel("Actual Fidelity (Binned)", fontsize=14)
     ax.set_ylabel("Mean Absolute Error", fontsize=14)
     ax.set_title(f"Mean Error vs. Actual Fidelity (in {num_bins} bins)", fontsize=16)
-    plt.grid(True)
-    plt.legend()
+    ax.grid(True)
+    ax.legend()
     plt.tight_layout()
-    plt.show()
 
+    # Save plot and CSV before showing
     if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
         plot_path = os.path.join(output_dir, "error_by_fidelity.png")
-        plt.savefig(plot_path, dpi=300, bbox_inches="tight")
+        fig.savefig(plot_path, dpi=300, bbox_inches="tight")
         print(f"[INFO] Saved error-by-fidelity plot to: {plot_path}")
 
         csv_path = os.path.join(output_dir, "error_by_fidelity.csv")
-        df_fidelity_error.to_csv(csv_path, index=False)
+        df_stats.to_csv(csv_path, index=False)
         print(f"[INFO] Saved error-by-fidelity stats to: {csv_path}")
 
-    return df_fidelity_error
+    plt.show()
+    return df_stats
