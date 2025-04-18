@@ -1,3 +1,4 @@
+import json
 import os
 import torch
 
@@ -71,133 +72,135 @@ class ModelConfig:
     n_jobs: Optional[int] = None
 
 
-def get_model_config(config_name, device='cpu'):
+def get_model_config_from_path(model_config_path, device):
+    try:
+        with open(model_config_path, 'r') as f:
+            config = json.load(f)
+            config["device"] = device
+        return config
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        raise RuntimeError(f"Failed to load model config from '{model_config_path}': {e}")
+
+
+def get_default_model_config_by_search_space(model_type, search_space, features=None, device='cpu'):
     """
     Retrieve the model configuration for a specific model name.
+
+    Args:
+        model_config_path (str): Path to the saved JSON config file.
+        model_name (str): Name of the model (used as a key in the config).
+        search_space (str): Name of the benchmark search space.
+        features (int): Number of input node features.
+        device (str): 'cpu' or 'cuda'.
+
+    Returns:
+        ModelConfig: A ModelConfig instance with updated parameters.
     """
-    configs = {
-        "gcn_test_dataset_ghz_a_2025-04-17_22-45-32":{
-                'device': device,
-                'emb_dim': 1200,
-                'layer_num': 8,
-                'qubit_num': 3,
-                'num_node_features': QCConfig().features_ghz_a,
-                'drop_ratio': 0.012714767230404513,
-                'batch_size': 32,
-                'epochs': 1,
-                'lr': 0.00042048670814195114,
-                'decay': 1.2239395743425164e-06,
-                'JK': 'mean',
-                'seed': 42,
-                'runseed': 42,
-                'num_workers': 0,
-                'patience': 7,
-                'metric': 'spearman',
-                'graph_pooling': 'max',
-        },
+    try:
+        config = _get_default_model_config(search_space, model_type,features,device)
+        config['device'] = device
+        config['num_node_features'] = features
+        config.setdefault('seed', 42)
+        config.setdefault('runseed', 42)
+        config.setdefault('num_workers', 0)
+        config.setdefault('patience', 7)
+        return ModelConfig(**config)
+    except Exception as e:
+        raise RuntimeError(f"Error processing model config: {e}")
+
+
+def _get_default_model_config(search_space, model_type, features=None, device="cpu"):
+    """
+    Fallback config based on model_name and search_space.
+    """
+    default_configs = {
         "gcn_ghz_a": {
-            'device': device,
             'emb_dim': 1200,
             'layer_num': 8,
             'qubit_num': 3,
-            'num_node_features': QCConfig().features_ghz_a,
+            'num_node_features': features,
             'drop_ratio': 0.012714767230404513,
             'batch_size': 32,
-            'epochs': 1,
+            'epochs': 3,
             'lr': 0.00042048670814195114,
             'decay': 1.2239395743425164e-06,
             'JK': 'mean',
-            'seed': 42,
-            'runseed': 42,
-            'num_workers': 0,
-            'patience': 7,
-            'metric': 'spearman',
             'graph_pooling': 'max',
+            'metric': 'spearman',
         },
         "gcn_ghz_b": {
-            'device': device,
             'emb_dim': 1050,
             'layer_num': 8,
             'qubit_num': 3,
-            'num_node_features': QCConfig().features_ghz_b,
+            'num_node_features': features,
             'drop_ratio': 0.0644893118913786,
             'batch_size': 128,
             'epochs': 100,
             'lr': 4.540520885756229e-05,
             'decay': 1.917208797826118e-06,
             'JK': 'mean',
-            'seed': 42,
-            'runseed': 42,
-            'num_workers': 0,
-            'patience': 7,
-            'metric': 'spearman',
             'graph_pooling': 'attention',
+            'metric': 'spearman',
         },
         "gcn_ls_a": {
-            'device': device,
             'emb_dim': 1050,
             'layer_num': 8,
             'qubit_num': 4,
-            'num_node_features': QCConfig().features_ghz_b,
+            'num_node_features': features,
             'drop_ratio': 0.0644893118913786,
             'batch_size': 32,
             'epochs': 100,
             'lr': 4.540520885756229e-05,
             'decay': 1.917208797826118e-06,
             'JK': 'mean',
-            'seed': 42,
-            'runseed': 42,
-            'num_workers': 0,
-            'patience': 7,
-            'metric': 'spearman',
             'graph_pooling': 'attention',
+            'metric': 'spearman',
         },
         "random_forest_ghz_a": {
-            'device': device,
             'n_estimators': 350,
             'max_depth': 30,
             'min_samples_split': 2,
             'min_samples_leaf': 1,
             'max_features': 'sqrt',
             'n_jobs': -1,
-            'seed': 42,
-            'runseed': 42,
             'batch_size': 64,
-            'num_workers': 0,
             'metric': 'mse',
         },
         "random_forest_ghz_b": {
-            'device': device,
             'n_estimators': 325,
             'max_depth': 30,
             'min_samples_split': 3,
             'min_samples_leaf': 3,
             'max_features': 'sqrt',
             'n_jobs': -1,
-            'seed': 42,
-            'runseed': 42,
             'batch_size': 64,
-            'num_workers': 0,
             'metric': 'spearman',
         },
         "random_forest_ls_a": {
-            'device': device,
             'n_estimators': 325,
             'max_depth': 30,
             'min_samples_split': 3,
             'min_samples_leaf': 3,
             'max_features': 'sqrt',
             'n_jobs': -1,
-            'seed': 42,
-            'runseed': 42,
             'batch_size': 64,
-            'num_workers': 0,
             'metric': 'spearman',
         }
     }
-    if config_name not in configs:
-        raise ValueError(f"config '{config_name}' not found")
-    return ModelConfig(**configs[config_name])
+
+
+    if model_type == "gcn":
+        fallback_key = f"gcn_{search_space}"
+    elif model_type == "random_forest":
+        fallback_key = f"random_forest_{search_space}"
+    else:
+        raise KeyError(f"Unknown model type for fallback: '{model_type}'")
+    config = default_configs[fallback_key].copy()
+    config["device"] = device
+    if fallback_key not in default_configs:
+        raise KeyError(f"No default config found for '{fallback_key}'")
+
+    return default_configs[fallback_key].copy()
 
 
 @dataclass
@@ -214,8 +217,8 @@ class PathConfig:
             'optuna_studies': os.path.join(self.base_path, 'surrogate_models/tuning', 'studies'),
             'gcn_data': os.path.join(self.base_path, 'data/processed_data/', 'gcn_processed_data'),
             'rf_data': os.path.join(self.base_path, 'data', 'rf_data'),
-#            'test_data': os.path.join(self.base_path, 'data', 'test_data'),
+            #            'test_data': os.path.join(self.base_path, 'data', 'test_data'),
             'trained_models': os.path.join(self.base_path, 'surrogate_models', 'trained_models'),
             'benchmark': os.path.join(self.base_path, 'benchmark', 'results'),
-#            'plots': os.path.join(self.base_path, 'benchmark/results', 'plots'),
+            #            'plots': os.path.join(self.base_path, 'benchmark/results', 'plots'),
         }

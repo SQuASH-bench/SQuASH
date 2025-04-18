@@ -5,17 +5,18 @@ import torch
 from surrogate_models.architectures.gnn.gnn_model import RegGNN
 from util.qu_convert import qiskit_to_data_object
 
-from config import DeviceConfig, get_model_config, PathConfig, QCConfig
+from config import DeviceConfig, get_default_model_config_by_search_space, PathConfig, QCConfig, \
+    get_model_config_from_path
 
 
-def load_trained_model(model_name: str) -> RegGNN:
+def load_trained_model(model_config_path) -> RegGNN:
     """
     Load a pre-trained RegGNN model
     """
     device_config = DeviceConfig()
     device = device_config.device
 
-    model_config = get_model_config(model_name, device)
+    model_config = get_model_config_from_path(model_config_path=model_config_path, device=device)
 
     model = RegGNN(
         num_layer=model_config.layer_num,
@@ -83,7 +84,9 @@ if __name__ == "__main__":
 
     # model identifier to be used for loading
     model_name = 'gs2_21_02'
-    model = load_trained_model(model_name)
+
+    model_config_path = os.path.join(paths['trained_models'], f'{model_name}_config.json')
+    model = load_trained_model(model_config_path=model_config_path)
 
     # define the location of the pickle file containing the quantum circuit and its performance
     circuit_file = os.path.join(paths['rl_data'], 'logs_02_2024', 'unique_circuits', '0', 'qc_rl_754_7000.pkl')

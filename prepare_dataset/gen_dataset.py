@@ -1,7 +1,7 @@
 import os
 
 from config import QCConfig
-from util.config_utils import get_gate_set_by_name
+from util.config_utils import get_gate_set_and_features_by_name
 from util.data_loader import create_data, save_data
 
 """
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     model = 'GCN'  # Options: 'RandomForest' or 'GCN'
     proxy = False
 
-    gs = get_gate_set_by_name(gate_set_name)
+    gs,_ = get_gate_set_and_features_by_name(gate_set_name)
     # Determine the base directory of the current script.
     base_dir = os.path.dirname(os.path.abspath(__file__))
 

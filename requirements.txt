@@ -72,3 +72,4 @@ websocket-client==1.8.0
 wheel==0.44.0
 yarl
 optuna
+jupyter

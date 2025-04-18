@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from scipy.stats import spearmanr
 
-from config import QCConfig, DeviceConfig, PathConfig, get_model_config
+from config import QCConfig, DeviceConfig, PathConfig, get_default_model_config_by_search_space
 from util import split
 from util.data_loader import load_data, save_data
 
@@ -93,13 +93,13 @@ if __name__ == "__main__":
     device = device_config.device
 
     # Set gate set and dataset names to be used for this training run.
-    gate_set = 'gs2'
+    search_space = 'ghz_b'
     dataset_name = 'train_dataset_augmented_gs2'
     model_name = f'{dataset_name}'  # Identifier for the current training configuration
 
     # Load path and model configurations.
     path_config = PathConfig()
-    model_config = get_model_config(f'random_forest_{gate_set}', device)
+    model_config = get_default_model_config_by_search_space(model_type="random_forest", search_space=search_space)
 
     # Set random seeds for reproducibility.
     random.seed(model_config.seed)
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     print(f"[INFO] Train samples: {len(train_data)}, Validation samples: {len(val_data)}, Test samples: {len(test_data)}")
 
     # Save test data for later use.
-    save_data(os.path.join(path_config.paths['test_data'], f'test_rf_{gate_set}.pt'), test_data)
+    save_data(os.path.join(path_config.paths['test_data'], f'test_rf_{search_space}.pt'), test_data)
     print(f"[INFO] Test Data saved to: {os.path.join(path_config.paths['test_data'])}, {len(test_data)}")
 
     # Print model training information.

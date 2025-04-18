@@ -12,7 +12,7 @@ from torch_geometric.loader import DataLoader
 from surrogate_models.architectures.gnn.gnn_model import RegGNN
 from util import split
 from util.data_loader import load_data
-from config import get_model_config, PathConfig
+from config import get_default_model_config_by_search_space, PathConfig
 
 
 def objective(trial, params, train_loader, val_loader, criterion):
@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     # Load configuration paths and model parameters
     path_config = PathConfig()
-    model_config = get_model_config(f'gcn_{gate_set}', device)
+    model_config = get_default_model_config_by_search_space(f'gcn_{gate_set}', device)
 
     # Convert model_config to a dictionary; also add paths from configuration.
     params = vars(model_config)

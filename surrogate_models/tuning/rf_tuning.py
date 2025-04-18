@@ -12,7 +12,7 @@ from scipy.stats import spearmanr
 
 from util import split
 from util.data_loader import load_data
-from config import DeviceConfig, get_model_config, PathConfig
+from config import DeviceConfig, get_default_model_config_by_search_space, PathConfig
 
 
 def prepare_data(data):
@@ -124,7 +124,7 @@ if __name__ == '__main__':
 
     # Load configuration paths and model parameters
     path_config = PathConfig()
-    model_config = get_model_config(model_name, device)
+    model_config = get_default_model_config_by_search_space(model_name, device)
 
     # Convert model configuration to a dictionary and add additional paths
     params = vars(model_config)

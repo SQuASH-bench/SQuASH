@@ -1,7 +1,7 @@
 import os
 import pickle
 
-from config import DeviceConfig, get_model_config, PathConfig, QCConfig
+from config import PathConfig, QCConfig
 from util.rf_convert import circuit_to_tensor
 
 
@@ -9,11 +9,9 @@ def load_trained_model(model_name):
     """
     Load a pre-trained Random Forest model from a pickle file.
     """
-    # Retrieve the file paths from the configuration object
     paths = PathConfig().paths
-    model_path = os.path.join(paths['la'], f'{model_name}.pkl')
+    model_path = os.path.join(paths['trained_models'], f'{model_name}.pkl')
 
-    # Open and load the model using pickle
     with open(model_path, 'rb') as f:
         model = pickle.load(f)
     return model

@@ -1,3 +1,4 @@
+import json
 import os
 
 import matplotlib.pyplot as plt
@@ -6,17 +7,18 @@ import pandas as pd
 import matplotlib.colors as mcolors
 from matplotlib.ticker import FuncFormatter
 
-from config import DeviceConfig, get_model_config, PathConfig, QCConfig
+from config import DeviceConfig, get_default_model_config_by_search_space, PathConfig, QCConfig
 from evaluate.evaluate_utils import load_rf_model, evaluate_rf, load_gnn_model, evaluate_gnn, analyze_circuits, \
     analyze_error_by_fidelity, analyze_gate_features, compute_metrics
-from util.config_utils import get_gate_set_by_name
+from util.config_utils import get_gate_set_and_features_by_name
 from util.data_loader import load_data
 
 
 def run_random_forest_evaluation(gate_set, device, model_name, path_config):
     print("=== Random Forest Evaluation ===")
     model_name_rf = f"random_forest_{gate_set}"
-    model_config_rf = get_model_config(model_name_rf, device)
+
+    model_config_rf = get_(model_name_rf, device)
 
     data_path_rf = os.path.join(path_config.paths['rf_data'], f'{model_name}.pt')
     dataset_rf = load_data(data_path_rf)
@@ -84,9 +86,11 @@ def run_random_forest_evaluation(gate_set, device, model_name, path_config):
 def run_gcn_evaluation(device, model_name, path_config):
     print("=== GNN Evaluation ===")
     print(model_name)
+    gate_set_name = ""
 
     dataset_id = 'gcn_test_dataset_ghz_a_2025-04-17_22-45-32'
-    model_config = get_model_config(dataset_id, device)
+    model_config_path = os.path.join(path_config.paths['trained_models'], f'{model_name}_config.json')
+    model_config = get_default_model_config_by_search_space(model_config_path, model_name, device)
 
     dataset_path = os.path.join(path_config.paths['gcn_data'], f'{data_set_name}.pt')
     circuits = load_data(dataset_path)
@@ -228,7 +232,7 @@ if __name__ == "__main__":
     device_config = DeviceConfig()
     device = device_config.device
     path_config = PathConfig()
-    gate_mapping = get_gate_set_by_name(gate_set)
+    gate_mapping,_ = get_gate_set_and_features_by_name(gate_set)
 
     if rf:
         metrics_rf = run_random_forest_evaluation(gate_set=gate_set, device=device, model_name=model_name,
