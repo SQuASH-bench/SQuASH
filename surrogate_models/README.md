@@ -43,6 +43,27 @@ This repository provides code for converting quantum circuits into graph represe
 
 ## Usage
 
+⚙️ Configure Settings (Optional)
+
+You can adjust the structure of surrogate models by modifying configuration files under the `config/` directory. These settings allow for easy customization without changing the core code.
+
+**What you can configure:**
+
+- 🧱 **Model Hyperparameters**  
+  Define architecture-specific parameters like embedding dimensions, number of layers, dropout ratios, etc.
+
+- ⚙️ **Training Settings**  
+  Customize batch size, learning rate, epochs, optimizer settings, and evaluation metrics.
+
+- 🧬 **Gate Sets and Circuit Parameters**  
+  Change the basis gate set, depth limits, or quantum circuit properties used for QAS.
+
+- 📁 **Paths and Storage**  
+  Set locations for saving models, logs, and generated data.
+
+> 💡 Tip: Default configurations are automatically loaded, but you can override them by editing the relevant `.json` or `.py` files in `config/`.
+
+
 ### Dataset Creation and Conversion
 - Use utilities in the `util` directory to convert quantum circuits (in QASM 3.0 format) to PyTorch Geometric Data objects.
 - Example:  
