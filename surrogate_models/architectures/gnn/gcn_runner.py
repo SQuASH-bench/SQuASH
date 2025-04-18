@@ -12,7 +12,10 @@ from util import split
 from surrogate_models.architectures.gnn.gnn_model import RegGNN
 from util.data_loader import load_data, save_data
 from config import get_model_config, PathConfig
+from datetime import datetime
 
+
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 def set_initial_best_valid_metrics(params):
     if params['metric'] == 'spearman':
@@ -77,7 +80,7 @@ def fit(model_name, params, train_loader, val_loader, test_loader, loss_fn):
     n_imp = 0  # number of epochs without improvement
 
     best_val_metric = set_initial_best_valid_metrics(params=params)
-    best_model_path = os.path.join(params['PATHS']['trained_models'], f'gcn_{model_name}_new.pth')
+    best_model_path = os.path.join(params['PATHS']['trained_models'], f'gcn_{model_name}_{timestamp}.pth')
 
     prev_train_loss, prev_val_loss = None, None
 
@@ -210,7 +213,7 @@ if __name__ == "__main__":
         f"[INFO] Train samples: {len(train_data)}, Validation samples: {len(val_data)}, Test samples: {len(test_data)}")
 
     # save test data for further reference.
-    save_data(os.path.join(path_config.paths['gcn_data'], f'test_gcn_{gate_set_name}.pt) '), test_data)
+    save_data(os.path.join(path_config.paths['gcn_data'], f'test_gcn_{gate_set_name}_{timestamp}.pt'), test_data)
     print(f"[INFO] Test Data saved to: {os.path.join(path_config.paths['test_data'])}, {len(test_data)}")
 
     train_loader = DataLoader(train_data, batch_size=model_config.batch_size, shuffle=True,
