@@ -103,7 +103,7 @@ def save_json(path, obj):
         json.dump(obj, f, indent=4)
 
 
-def train(model_name, params, train_loader, val_loader, test_loader, loss_fn):
+def train(model_name, params, train_loader, val_loader, test_loader, loss_fn, model_logs_path):
     print(f"Device: {params['device']}")
     model = RegGNN(
         num_layer=params['layer_num'],
@@ -118,7 +118,7 @@ def train(model_name, params, train_loader, val_loader, test_loader, loss_fn):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=params['lr'], weight_decay=params['decay'])
     best_metric = set_initial_best_valid_metrics(params['metric'])
-    best_model_path = os.path.join(params['PATHS']['trained_models'], f'{model_name}.pth')
+    best_model_path = os.path.join(model_logs_path, f'{model_name}.pth')
 
     records = {k: [] for k in ['train_losses', 'val_losses', 'train_spearmans', 'val_spearmans', 'train_r2', 'val_r2']}
     patience, overfit, n_imp = params['patience'], 0, 0
@@ -169,9 +169,9 @@ def train(model_name, params, train_loader, val_loader, test_loader, loss_fn):
     return results, {model_name: records}
 
 
-def save_results(results, loss_records, search_space, paths):
-    benchmark_path = os.path.join(paths['benchmark'], f'gcn_{search_space}_benchmark_results.pkl')
-    records_path = os.path.join(paths['benchmark'], f'gcn_{search_space}_records.pkl')
+def save_results(results, loss_records, search_space, model_logs_path):
+    benchmark_path = os.path.join(model_logs_path, f'gcn_{search_space}_benchmark_results.pkl')
+    records_path = os.path.join(model_logs_path, f'gcn_{search_space}_records.pkl')
     with open(benchmark_path, 'wb') as f:
         pickle.dump(results, f)
     with open(records_path, 'wb') as f:
@@ -189,6 +189,7 @@ def plot_metrics(file_path, epochs, records, key, ylabel, title):
     plt.title(title)
     plt.legend()
     plt.grid(True)
+    print(f"[INFO] {ylabel} plot is saved to {file_path}")
     plt.savefig(file_path)
     plt.show()
 
@@ -197,10 +198,14 @@ if __name__ == "__main__":
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
     search_space = 'ghz_a'
-    model_name = f"demo_gcn_{search_space}_{timestamp}"
-    gate_set, features = get_gate_set_and_features_by_name(f"gate_set_{search_space}")
-    print(f"[INFO] Training on gate set: {gate_set}")
+
     config, gate_set, timestamp = prepare_paths_and_config(search_space, device)
+    print(f"[INFO] Training on gate set: {gate_set}")
+
+    model_name = f"demo_gcn_{search_space}_{timestamp}"
+    model_logs_path = os.path.join(config['PATHS'][f'trained_models'], f'{model_name}')
+    os.makedirs(model_logs_path, exist_ok=True)
+
     set_seed(config["runseed"])
     data_name = f"demo_dataset_ghz_a"
     data_path = os.path.join(config['PATHS']['gcn_data'], f'{data_name}.pt')
@@ -214,20 +219,22 @@ if __name__ == "__main__":
         num_workers=config['num_workers']
     )
 
-    save_json(os.path.join(config['PATHS']['trained_models'], f'{model_name}_config.json'), config)
+    save_json(os.path.join(model_logs_path, f'{model_name}_config.json'), config)
 
     print("[INFO] Starting training")
-    results, loss_records = train(model_name, config, train_loader, val_loader, test_loader, nn.MSELoss())
+    results, loss_records = train(model_name, config, train_loader, val_loader, test_loader, nn.MSELoss(),
+                                  model_logs_path=model_logs_path)
 
     for model_name, best_val, test_loss, test_spear, test_r2 in results:
         print(
             f"\nModel: {model_name} | Best Val: {best_val:.4f} | Test Loss: {test_loss:.4f} | Spearman: {test_spear:.4f} | R2: {test_r2:.4f}")
 
-    save_results(results, loss_records, search_space, config['PATHS'])
+    save_results(results, loss_records, search_space, model_logs_path)
 
     epochs = range(1, len(loss_records[model_name]['train_losses']) + 1)
-    file_path_loss_plot = os.path.join(config['PATHS']['trained_models'], f'{model_name}_loss.png')
-    file_path_spearman_plot = os.path.join(config['PATHS']['trained_models'], f'{model_name}_spearman.png')
-    plot_metrics(file_path_loss_plot, epochs, loss_records[model_name], 'losses', 'Loss', 'Training and Validation Loss')
+    file_path_loss_plot = os.path.join(model_logs_path, f'{model_name}_loss.png')
+    file_path_spearman_plot = os.path.join(model_logs_path, f'{model_name}_spearman.png')
+    plot_metrics(file_path_loss_plot, epochs, loss_records[model_name], 'losses', 'Loss',
+                 'Training and Validation Loss')
     plot_metrics(file_path_spearman_plot, epochs, loss_records[model_name], 'spearmans', "Spearman's rho",
                  "Training and Validation Spearman's rho")
