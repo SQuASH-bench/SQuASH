@@ -52,68 +52,7 @@ def get_data(path):
     return circuit
 
 
-def create_data(path, gate_set=None, model=None, proxy=False, gate_set_name=None):
-    """
-    Process circuit data from subdirectories and convert them into data objects
-    appropriate for a given model (GCN or RandomForest).
 
-    For each subfolder in the provided path, it loads the circuit data using `get_data`
-    and then processes each circuit using the specified conversion function:
-      - For GCN models: uses `process_graph` from `util.qu_convert`
-      - For RandomForest models: uses `circuit_to_tensor` from `util.rf_convert`
-
-    The number of qubits used in processing depends on the gate_set_name (e.g., 'ml' uses 4 qubits).
-
-    Args:
-        path (str): Path containing subfolders with circuit pickle files.
-        gate_set (list, optional): List of gate strings to use for processing. Defaults to ['h', 'cx'].
-        model (str, required): The model type; either 'GCN' or 'RandomForest'.
-        proxy (bool, optional): Whether to use proxy information in processing. Defaults to False.
-        gate_set_name (str, optional): Additional identifier to choose proper processing (e.g., 'ml').
-
-    Returns:
-        list: A list of processed data objects.
-    """
-    if gate_set is None:
-        print("Gate set is unspecified, setting to ['h', 'cx']")
-        gate_set = ['h', 'cx']
-    data = []
-    # Process each subfolder.
-    for folder in os.listdir(path):
-        subfolder_path = os.path.join(path, folder)
-        if os.path.isdir(subfolder_path):
-            qiskit_circuits = get_data(subfolder_path)
-            for circuit in qiskit_circuits:
-                try:
-                    # Get the initial circuit data.
-                    qu_circuit = circuit.get("init_circuit")
-                    # init_params might be provided; if not, use None.
-                    init_params = None
-                    fidelity = circuit.get("fidelity")
-                    if fidelity is None:
-                        fidelity = circuit.get("train_accuracy")
-
-                    # Process circuit based on model type and gate set name.
-                    if model == 'GCN':
-                        if gate_set_name == 'ml':
-                            processed_circuit = process_graph(qu_circuit, init_params=init_params, fidelity=fidelity,
-                                                              gate_set=gate_set, proxy=proxy, num_qubits=4)
-                        else:
-                            processed_circuit = process_graph(qu_circuit, init_params=init_params, fidelity=fidelity,
-                                                              gate_set=gate_set, proxy=proxy, num_qubits=3)
-                        data.append(processed_circuit)
-                    elif model == 'RandomForest':
-                        if gate_set_name == 'ml':
-                            processed_circuit = circuit_to_tensor(qu_circuit, fidelity, gate_set, num_qubits=4)
-                        else:
-                            processed_circuit = circuit_to_tensor(qu_circuit, fidelity, gate_set, num_qubits=3)
-                        data.append(processed_circuit)
-                    else:
-                        raise ValueError(f"Unknown model: {model}")
-                except Exception as e:
-                    print(f"Error processing circuit {circuit}: {e}")
-
-    return data
 
 
 def create_data_from_database(db_path="dataset.db", gate_set=None, model=None):

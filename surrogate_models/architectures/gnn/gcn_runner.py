@@ -12,9 +12,52 @@ from torch_geometric.loader import DataLoader
 
 from config import get_default_model_config_by_search_space, PathConfig
 from surrogate_models.architectures.gnn.gnn_model import RegGNN
+from surrogate_models.prepare_dataset.gen_dataset import create_gcn_data
 from util import split
 from util.config_utils import get_gate_set_and_features_by_name
 from util.data_loader import load_data, save_data
+
+
+def prepare_paths_and_config(search_space: str, device):
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    gate_set, features = get_gate_set_and_features_by_name(f"gate_set_{search_space}")
+    paths = PathConfig().paths
+    model_config = get_default_model_config_by_search_space(
+        model_type="gcn", search_space=search_space, features=features, device=device
+    )
+    config = vars(model_config)
+    config.update({'PATHS': paths, 'device': device, 'timestamp': timestamp})
+    return config, gate_set, timestamp
+
+
+def prepare_dataset(data_name, data_path, gate_set, search_space, config, paths, timestamp, save_test_data=True):
+    if not os.path.exists(data_path):
+        print(f"[INFO] GCN data not found. Generating from raw circuits...")
+        raw_data_path = os.path.join(paths['raw_data'], data_name)
+        data = create_gcn_data(path=raw_data_path, gate_set=gate_set, gate_set_name=f"gate_set_{search_space}",
+                               proxy=False)
+        if not data:
+            raise ValueError(f"No data generated at: {raw_data_path}")
+        save_data(data_path, data)
+    else:
+        data = load_data(data_path)
+
+    if not data:
+        raise ValueError("[ERROR] Loaded data is empty.")
+
+    train_data, val_data, test_data = split.train_val_test_split(data, random_seed=config['seed'])
+    print(f"[INFO] Train: {len(train_data)}, Val: {len(val_data)}, Test: {len(test_data)}")
+    if save_test_data:
+        save_data(os.path.join(paths['gcn_data'], f'test_gcn_{search_space}_{timestamp}.pt'), test_data)
+    return train_data, val_data, test_data
+
+
+def prepare_dataloaders(train, val, test, batch_size, num_workers):
+    return (
+        DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=num_workers),
+        DataLoader(val, batch_size=batch_size, shuffle=False, num_workers=num_workers),
+        DataLoader(test, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    )
 
 
 def set_seed(seed):
@@ -126,7 +169,16 @@ def train(model_name, params, train_loader, val_loader, test_loader, loss_fn):
     return results, {model_name: records}
 
 
-def plot_metrics(epochs, records, key, ylabel, title):
+def save_results(results, loss_records, search_space, paths):
+    benchmark_path = os.path.join(paths['benchmark'], f'gcn_{search_space}_benchmark_results.pkl')
+    records_path = os.path.join(paths['benchmark'], f'gcn_{search_space}_records.pkl')
+    with open(benchmark_path, 'wb') as f:
+        pickle.dump(results, f)
+    with open(records_path, 'wb') as f:
+        pickle.dump(loss_records, f)
+
+
+def plot_metrics(file_path, epochs, records, key, ylabel, title):
     plt.figure(figsize=(12, 6))
     plt.plot(epochs, records[f'train_{key}'], label=f'Train {ylabel}')
     plt.plot(epochs, records[f'val_{key}'], label=f'Validation {ylabel}')
@@ -137,6 +189,7 @@ def plot_metrics(epochs, records, key, ylabel, title):
     plt.title(title)
     plt.legend()
     plt.grid(True)
+    plt.savefig(file_path)
     plt.show()
 
 
@@ -144,41 +197,24 @@ if __name__ == "__main__":
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
     search_space = 'ghz_a'
-    model_name = f"gcn_{search_space}_{timestamp}"
+    model_name = f"demo_gcn_{search_space}_{timestamp}"
     gate_set, features = get_gate_set_and_features_by_name(f"gate_set_{search_space}")
     print(f"[INFO] Training on gate set: {gate_set}")
+    config, gate_set, timestamp = prepare_paths_and_config(search_space, device)
+    set_seed(config["runseed"])
+    data_name = f"demo_dataset_ghz_a"
+    data_path = os.path.join(config['PATHS']['gcn_data'], f'{data_name}.pt')
+    train_data, val_data, test_data = prepare_dataset(data_name, data_path, gate_set, search_space, config,
+                                                      config['PATHS'],
+                                                      timestamp, save_test_data=True)
 
-    paths = PathConfig().paths
-    model_config = get_default_model_config_by_search_space(model_type="gcn",
-                                                            search_space=search_space,
-                                                            features=features,
-                                                            device=device)
-    config = vars(model_config)
-    config['PATHS'], config['device'], config['timestamp'] = paths, device, timestamp
+    train_loader, val_loader, test_loader = prepare_dataloaders(
+        train_data, val_data, test_data,
+        batch_size=config['batch_size'],
+        num_workers=config['num_workers']
+    )
 
-    set_seed(model_config.runseed)
-
-    data_name = f"test_dataset_{search_space}"
-    data_path = os.path.join(paths['gcn_data'], f'{data_name}.pt')
-    print(f"Loading data from {data_path}")
-    data = load_data(data_path)
-
-    if not data:
-        raise ValueError("[ERROR] Data is empty")
-
-    train_data, val_data, test_data = split.train_val_test_split(data, random_seed=model_config.seed)
-    print(f"[INFO] Train: {len(train_data)}, Val: {len(val_data)}, Test: {len(test_data)}")
-
-    save_data(os.path.join(paths['gcn_data'], f'test_gcn_{search_space}_{timestamp}.pt'), test_data)
-
-    train_loader = DataLoader(train_data, batch_size=model_config.batch_size, shuffle=True,
-                              num_workers=model_config.num_workers)
-    val_loader = DataLoader(val_data, batch_size=model_config.batch_size, shuffle=False,
-                            num_workers=model_config.num_workers)
-    test_loader = DataLoader(test_data, batch_size=model_config.batch_size, shuffle=False,
-                             num_workers=model_config.num_workers)
-
-    save_json(os.path.join(paths['trained_models'], f'{model_name}_config.json'), config)
+    save_json(os.path.join(config['PATHS']['trained_models'], f'{model_name}_config.json'), config)
 
     print("[INFO] Starting training")
     results, loss_records = train(model_name, config, train_loader, val_loader, test_loader, nn.MSELoss())
@@ -187,14 +223,11 @@ if __name__ == "__main__":
         print(
             f"\nModel: {model_name} | Best Val: {best_val:.4f} | Test Loss: {test_loss:.4f} | Spearman: {test_spear:.4f} | R2: {test_r2:.4f}")
 
-    benchmark_path = os.path.join(paths['benchmark'], f'gcn_{search_space}_benchmark_results.pkl')
-    records_path = os.path.join(paths['benchmark'], f'gcn_{search_space}_records.pkl')
-    with open(benchmark_path, 'wb') as f:
-        pickle.dump(results, f)
-    with open(records_path, 'wb') as f:
-        pickle.dump(loss_records, f)
-    print("loss_records", loss_records)
+    save_results(results, loss_records, search_space, config['PATHS'])
 
     epochs = range(1, len(loss_records[model_name]['train_losses']) + 1)
-    plot_metrics(epochs, loss_records[model_name], 'losses', 'Loss', 'Training and Validation Loss')
-    plot_metrics(epochs, loss_records[model_name], 'spearmans', "Spearman's rho", "Training and Validation Spearman's rho")
+    file_path_loss_plot = os.path.join(config['PATHS']['trained_models'], f'{model_name}_loss.png')
+    file_path_spearman_plot = os.path.join(config['PATHS']['trained_models'], f'{model_name}_spearman.png')
+    plot_metrics(file_path_loss_plot, epochs, loss_records[model_name], 'losses', 'Loss', 'Training and Validation Loss')
+    plot_metrics(file_path_spearman_plot, epochs, loss_records[model_name], 'spearmans', "Spearman's rho",
+                 "Training and Validation Spearman's rho")
