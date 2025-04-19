@@ -1,3 +1,18 @@
+# Copyright 2025 Fraunhofer Institute for Open Communication Systems FOKUS
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import os
 import pickle
 import numpy as np
@@ -12,8 +27,6 @@ from surrogate_models.architectures.random_forest.random_forest_runner import pr
 from surrogate_models.architectures.gnn.gnn_model import RegGNN
 from config import PathConfig
 
-
-# --------------------- Utility Functions --------------------- #
 
 def compute_metrics(predicted, actual, label="All Data", tolerance=0.1):
     """

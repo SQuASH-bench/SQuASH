@@ -1,3 +1,17 @@
+# Copyright 2025 Fraunhofer Institute for Open Communication Systems FOKUS
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import os
 import pickle
@@ -30,10 +44,10 @@ def prepare_paths_and_config(search_space: str, device):
     return config, gate_set, timestamp
 
 
-def prepare_dataset(data_name, data_path, gate_set, search_space, config, paths, timestamp, save_test_data=True):
+def prepare_dataset(data_name, data_path, gate_set, search_space, config, timestamp, save_test_data=True):
     if not os.path.exists(data_path):
         print(f"[INFO] GCN data not found. Generating from raw circuits...")
-        raw_data_path = os.path.join(paths['raw_data'], data_name)
+        raw_data_path = os.path.join(config['PATHS']['raw_data'], data_name)
         data = create_gcn_data(path=raw_data_path, gate_set=gate_set, gate_set_name=f"gate_set_{search_space}",
                                proxy=False)
         if not data:
@@ -48,7 +62,7 @@ def prepare_dataset(data_name, data_path, gate_set, search_space, config, paths,
     train_data, val_data, test_data = split.train_val_test_split(data, random_seed=config['seed'])
     print(f"[INFO] Train: {len(train_data)}, Val: {len(val_data)}, Test: {len(test_data)}")
     if save_test_data:
-        save_data(os.path.join(paths['gcn_data'], f'test_gcn_{search_space}_{timestamp}.pt'), test_data)
+        save_data(os.path.join(config['PATHS']['gcn_data'], f'test_gcn_{search_space}_{timestamp}.pt'), test_data)
     return train_data, val_data, test_data
 
 
@@ -209,8 +223,7 @@ if __name__ == "__main__":
     set_seed(config["runseed"])
     data_name = f"demo_dataset_ghz_a"
     data_path = os.path.join(config['PATHS']['gcn_data'], f'{data_name}.pt')
-    train_data, val_data, test_data = prepare_dataset(data_name, data_path, gate_set, search_space, config,
-                                                      config['PATHS'],
+    train_data, val_data, test_data = prepare_dataset(data_name, data_path, gate_set, search_space, config.
                                                       timestamp, save_test_data=True)
 
     train_loader, val_loader, test_loader = prepare_dataloaders(

@@ -1,3 +1,17 @@
+# Copyright 2025 Fraunhofer Institute for Open Communication Systems FOKUS
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import os
 import torch
@@ -97,7 +111,7 @@ def get_default_model_config_by_search_space(model_type, search_space, features=
         ModelConfig: A ModelConfig instance with updated parameters.
     """
     try:
-        config = _get_default_model_config(search_space, model_type,features,device)
+        config = _get_default_model_config(search_space, model_type, features, device)
         config['device'] = device
         config['num_node_features'] = features
         config.setdefault('seed', 42)
@@ -188,7 +202,6 @@ def _get_default_model_config(search_space, model_type, features=None, device="c
         }
     }
 
-
     if model_type == "gcn":
         fallback_key = f"gcn_{search_space}"
     elif model_type == "random_forest":
@@ -215,6 +228,7 @@ class PathConfig:
         # Define subdirectories for tuning studies, datasets, models, benchmarks, and plots.
         self.paths = {
             'optuna_studies': os.path.join(self.base_path, 'surrogate_models/tuning', 'studies'),
+            'raw_data': os.path.join(self.base_path, 'data/raw_data/'),
             'gcn_data': os.path.join(self.base_path, 'data/processed_data/', 'gcn_processed_data'),
             'rf_data': os.path.join(self.base_path, 'data', 'rf_data'),
             #            'test_data': os.path.join(self.base_path, 'data', 'test_data'),
