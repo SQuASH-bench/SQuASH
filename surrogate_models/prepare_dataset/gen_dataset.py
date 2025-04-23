@@ -65,6 +65,7 @@ def create_rf_data(path, gate_set, gate_set_name):
         if not os.path.isdir(subfolder_path):
             continue
         qiskit_circuits = get_data(subfolder_path)
+        i = 0
         for circuit in qiskit_circuits:
             try:
                 qu_circuit, _, fidelity, num_qubits = _process_common_args(
@@ -82,13 +83,13 @@ if __name__ == '__main__':
 
     # Load config and set variables
     qc_config = QCConfig()
-    data_name = 'demo_dataset_ghz_a'
-    gate_set_name = 'gate_set_ghz_a'
+    data_name = 'test_ghz_b_squash'
+    gate_set_name = 'gate_set_ghz_b'
     model = 'GCN'  # 'GCN' or 'RandomForest'
     proxy = False
 
     gate_set, _ = get_gate_set_and_features_by_name(gate_set_name)
-    input_path = os.path.abspath(os.path.join(base_dir, '../../data/raw_data', data_name))
+    input_path = "path/to/data"
 
     if model == 'GCN':
         output_path = os.path.abspath(
