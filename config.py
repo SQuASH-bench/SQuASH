@@ -91,8 +91,10 @@ def get_model_config_from_path(model_config_path, device):
         with open(model_config_path, 'r') as f:
             config = json.load(f)
             config["device"] = device
-            del config["PATHS"]
-            del config["timestamp"]
+            if "PATHS" in config:
+                del config["PATHS"]
+            if "timestamp" in config:
+                del config["timestamp"]
         return ModelConfig(**config)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         raise RuntimeError(f"Failed to load model config from '{model_config_path}': {e}")
@@ -235,6 +237,6 @@ class PathConfig:
             'rf_data': os.path.join(self.base_path, 'data', 'rf_data'),
             #            'test_data': os.path.join(self.base_path, 'data', 'test_data'),
             'trained_models': os.path.join(self.base_path, 'surrogate_models', 'trained_models'),
-            'benchmark': os.path.join(self.base_path, 'benchmark', 'results'),
+            'benchmark_search_spaces': os.path.join(self.base_path, 'benchmark', 'search_spaces'),
             #            'plots': os.path.join(self.base_path, 'benchmark/results', 'plots'),
         }

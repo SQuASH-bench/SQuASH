@@ -1,0 +1,97 @@
+# Copyright 2025 Fraunhofer Institute for Open Communication Systems FOKUS
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from qiskit import transpile
+from qiskit.quantum_info import state_fidelity
+from qiskit_aer import Aer
+from scipy.optimize import minimize
+
+from benchmark.search_spaces.ghz_a.generate_target_ghz_a import get_ghz_a_target
+from benchmark.search_spaces.ghz_a.ghz_a_search_space_config import ghz_a_conf
+from benchmark.utils import load_gnn_benchmark_model, predict_circuit_performance, \
+    convert_qasm_circuit_into_trainable_pqc
+from qiskit.qasm3 import loads
+from util.config_utils import get_gate_set_and_features_by_name
+
+
+def get_performance(qc):
+    backend = Aer.get_backend('statevector_simulator')
+    transpiled_circuit = transpile(qc, backend)
+    job = backend.run(transpiled_circuit)
+    job_result = job.result()
+    statevector = job_result.get_statevector()
+    return state_fidelity(statevector, get_ghz_a_target())
+
+
+def fidelity_loss(params):
+    param_dict = dict(zip(trainable_circuit.parameters, params))
+    if params.__sizeof__() > 0:
+        bound_circuit = trainable_circuit.assign_parameters(param_dict)
+    else:
+        bound_circuit = trainable_circuit
+    fidelity = get_performance(bound_circuit)
+    return -fidelity
+
+
+def minimize_circ(circuit, params, search_space_config):
+    initial_params = params
+    bounds = [(search_space_config["optimizer_bound_min"], search_space_config["optimizer_bound_max"])] * len(
+        circuit.parameters) if circuit.parameters else None
+    if circuit.parameters:
+        result = minimize(fidelity_loss,
+                          initial_params,
+                          method=search_space_config["optimizer"],
+                          options={'maxiter': search_space_config["optimizer_maxiter"]},
+                          bounds=bounds)
+        optimal_fidelity = result.fun
+        optimal_params = result.x
+        param_dict = dict(zip(circuit.parameters, optimal_params))
+        optimal_circuit = circuit.assign_parameters(param_dict)
+    else:
+        optimal_fidelity = get_performance(circuit)
+        optimal_circuit = circuit
+
+    return optimal_fidelity, optimal_circuit
+
+
+if __name__ == "__main__":
+    search_space_config = ghz_a_conf
+    model_name = "gcn_augmented_ghz_a"
+    search_space = "ghz_a"
+    model = load_gnn_benchmark_model(model_name, search_space=search_space, device="cpu")
+    gate_set, num_features = get_gate_set_and_features_by_name(search_space)
+    qasm_str = """
+    OPENQASM 3.0;
+    include "stdgates.inc";
+    qubit[3] q;
+    ry(0.00710119201813939) q[0];
+    rz(0.0075736413922590905) q[1];
+    cx q[0], q[1];
+    cx q[0], q[2];
+    """
+
+    qc = loads(qasm_str)
+    print("Initial circuit", loads(qasm_str))
+    print("Performance of untrained input PQC", get_performance(qc))
+    print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''")
+
+    prediction = predict_circuit_performance(qasm_str, model, gate_set)
+    print(f"Predicted performance for the trained PQC: {prediction}")
+    print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''")
+    trainable_circuit, params = convert_qasm_circuit_into_trainable_pqc(qasm_str)
+    ground_truth_fidelity_after_training, optimized_circuit = minimize_circ(trainable_circuit, params,
+                                                                            search_space_config)
+    print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''")
+    print(f"Ground truth performance for the trained PQC: {ground_truth_fidelity_after_training}")
+    print("Ground truth optimized circuit", {optimized_circuit.draw()})

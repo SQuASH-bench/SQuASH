@@ -17,6 +17,7 @@ import json
 import torch
 import pickle
 
+from evaluate.evaluate_utils import get_circuit_file_and_gate_set
 from surrogate_models.architectures.gnn.gnn_model import RegGNN
 from util.qu_convert import qiskit_to_data_object
 
@@ -82,27 +83,12 @@ def evaluate_circuit(circuit, model, gate_set):
     return prediction.item()
 
 
-def get_circuit_file_and_gate_set(model_name: str):
-    if model_name == "gcn_ghz_a":
-        gate_set = config.get("gates_ghz_a")
-        circuit_file = 'example_circuit_ghz_a.pkl'
-    elif model_name == "gcn_ghz_b":
-        gate_set = config.get("gates_ghz_b")
-        circuit_file = 'example_circuit_ghz_b.pkl'
-    elif model_name == "gcn_ls_a":
-        gate_set = config.get("gates_ls_a")
-        circuit_file = 'example_circuit_ls_a.pkl'
-    else:
-        raise ValueError("Unknown model name provided.")
-    return circuit_file, gate_set
-
-
 if __name__ == "__main__":
     config = load_config("../../surrogate_models/pretrained/gcn/config.json")
 
     model_name = "gcn_ml"
     model = load_model(model_name, device="cpu", config=config)
-    circuit_file, gate_set = get_circuit_file_and_gate_set(model_name)
+    circuit_file, gate_set = get_circuit_file_and_gate_set(config, model_name)
 
     with open(circuit_file, 'rb') as file:
         loaded_data = pickle.load(file)
