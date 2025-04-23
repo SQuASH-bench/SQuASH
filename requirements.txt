@@ -44,7 +44,7 @@ pyspnego==0.11.2
 python-dateutil==2.9.0.post0
 pytz==2024.2
 PyYAML
-qiskit==1.2.4
+qiskit==1.4.2
 qiskit-aer==0.15.1
 qiskit-ibm-runtime==0.33.2
 qiskit_qasm3_import==0.5.1
