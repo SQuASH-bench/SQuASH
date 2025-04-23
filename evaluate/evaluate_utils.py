@@ -157,9 +157,7 @@ def get_gates(data, gate_mapping):
 
 
 def plot_gate_usage_bar(gate_counts, title="Gate Usage in Problem Circuits", color=None, model_name=None,
-                        path_config=None):
-    if path_config is None:
-        path_config = PathConfig()
+                        output_dir=None):
     sns.set_theme(style="darkgrid")
     if not gate_counts:
         print("No gates to plot.")
@@ -174,7 +172,7 @@ def plot_gate_usage_bar(gate_counts, title="Gate Usage in Problem Circuits", col
     ax.set_ylabel("Usage Count", fontsize=14)
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
-    plt.savefig(os.path.join(path_config.paths['benchmark'], "plots", f'{model_name}_gate_usage.png'))
+    plt.savefig(os.path.join(output_dir, f'{model_name}_gate_usage.png'))
     plt.show()
 
 
@@ -229,7 +227,7 @@ def analyze_circuits(circuits, predicted, actual, gate_mapping, top_percent,
             print(f"  {gname}: {cnt} occurrences")
         fidelity_str = f"(fidelity >= {min_fidelity})" if min_fidelity else "(All Fidelity)"
         plot_title = f"Gate Usage in Top {top_percent}% Error Circuits {fidelity_str}"
-        plot_gate_usage_bar(gate_counts, title=plot_title, color=color, model_name=model_name)
+        plot_gate_usage_bar(gate_counts, title=plot_title, color=color, model_name=model_name, output_dir=output_dir)
     else:
         print("\nNo gates found among these circuits.")
 

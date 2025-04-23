@@ -21,18 +21,19 @@ import pandas as pd
 import matplotlib.colors as mcolors
 from matplotlib.ticker import FuncFormatter
 
-from config import DeviceConfig, get_default_model_config_by_search_space, PathConfig, QCConfig
+from config import DeviceConfig, PathConfig, get_model_config_from_path
 from evaluate.evaluate_utils import load_rf_model, evaluate_rf, load_gnn_model, evaluate_gnn, analyze_circuits, \
     analyze_error_by_fidelity, analyze_gate_features, compute_metrics
 from util.config_utils import get_gate_set_and_features_by_name
 from util.data_loader import load_data
 
 
-def run_random_forest_evaluation(gate_set, device, model_name, path_config):
+def run_random_forest_evaluation(gate_set, device, model_name, color, path_config):
     print("=== Random Forest Evaluation ===")
     model_name_rf = f"random_forest_{gate_set}"
-
-    model_config_rf = get_(model_name_rf, device)
+    model_config_path = os.path.join(path_config.paths['trained_models'], f'{model_name_rf}_config.json')
+    model_config_rf = get_model_config_from_path(model_config_path, model_name_rf)
+    model_config_rf['device'] = device
 
     data_path_rf = os.path.join(path_config.paths['rf_data'], f'{model_name}.pt')
     dataset_rf = load_data(data_path_rf)
@@ -80,7 +81,7 @@ def run_random_forest_evaluation(gate_set, device, model_name, path_config):
         data=df_rf,
         x="Error",
         bins=30,
-        color="orange",
+        color=color,
         ax=axs[1]
     )
     axs[1].set_title("Error Distribution (Predicted - Actual)", fontsize=16)
@@ -97,14 +98,11 @@ def run_random_forest_evaluation(gate_set, device, model_name, path_config):
     return metrics_rf
 
 
-def run_gcn_evaluation(device, model_name, path_config):
+def run_gcn_evaluation(device, model_name, data_set_name, gate_mapping, color, path_config):
     print("=== GNN Evaluation ===")
     print(model_name)
-    gate_set_name = ""
-
-    dataset_id = 'gcn_test_dataset_ghz_a_2025-04-17_22-45-32'
-    model_config_path = os.path.join(path_config.paths['trained_models'], f'{model_name}_config.json')
-    model_config = get_default_model_config_by_search_space(model_config_path, model_name, device)
+    model_config_path = os.path.join(path_config.paths['trained_models'], f'{model_name}', f'{model_name}_config.json')
+    model_config = get_model_config_from_path(model_config_path, device)
 
     dataset_path = os.path.join(path_config.paths['gcn_data'], f'{data_set_name}.pt')
     circuits = load_data(dataset_path)
@@ -113,19 +111,19 @@ def run_gcn_evaluation(device, model_name, path_config):
     if not circuits:
         raise ValueError("No data available for GNN evaluation.")
 
-    model_path = os.path.join(path_config.paths['trained_models'], f"{model_name}.pth")
+    model_path = os.path.join(path_config.paths['trained_models'], f"{model_name}", f"{model_name}.pth")
     gnn_model = load_gnn_model(model_path, model_config)
 
     predicted, actual = evaluate_gnn(circuits, gnn_model, model_config)
     metrics = compute_metrics(predicted, actual, label="GNN")
     errors = predicted - actual
 
-    output_dir = os.path.join(path_config.paths['benchmark'], f"plots/{model_name}")
+    output_dir = os.path.join(path_config.paths['trained_models'], f"{model_name}")
     os.makedirs(output_dir, exist_ok=True)
 
     # --- Analysis ---
-    run_circuit_analysis(circuits, predicted, actual, output_dir, model_name)
-    plot_gate_feature_stats(circuits, predicted, actual, output_dir, model_name)
+    run_circuit_analysis(circuits, predicted, actual, gate_mapping, color, output_dir, model_name)
+    plot_gate_feature_stats(circuits, predicted, actual, gate_mapping, output_dir, model_name)
     plot_fidelity_error_stats(actual, predicted, output_dir)
 
     # --- Plotting ---
@@ -135,13 +133,13 @@ def run_gcn_evaluation(device, model_name, path_config):
         "Error": errors
     })
 
-    plot_error_distribution(df, model_name, output_dir)
-    plot_hex_density(df, model_name, output_dir)
+    plot_error_distribution(df, model_name, color, output_dir)
+    plot_hex_density(df, model_name, color, output_dir)
 
     return metrics
 
 
-def run_circuit_analysis(circuits, predicted, actual, output_dir, model_name):
+def run_circuit_analysis(circuits, predicted, actual, gate_mapping, color, output_dir, model_name):
     analyze_circuits(
         circuits=circuits,
         predicted=predicted,
@@ -167,7 +165,7 @@ def run_circuit_analysis(circuits, predicted, actual, output_dir, model_name):
     )
 
 
-def plot_gate_feature_stats(circuits, predicted, actual, output_dir, model_name):
+def plot_gate_feature_stats(circuits, predicted, actual, gate_mapping, output_dir, model_name):
     stats = analyze_gate_features(
         circuits=circuits,
         predicted_scores=predicted,
@@ -191,7 +189,7 @@ def plot_fidelity_error_stats(actual, predicted, output_dir):
     print(df_error)
 
 
-def plot_error_distribution(df, model_name, output_dir):
+def plot_error_distribution(df, model_name, color, output_dir):
     sns.set_theme(style="darkgrid")
     fig, ax = plt.subplots(figsize=(18, 5))
 
@@ -207,7 +205,7 @@ def plot_error_distribution(df, model_name, output_dir):
     plt.show()
 
 
-def plot_hex_density(df, model_name, output_dir):
+def plot_hex_density(df, model_name, color, output_dir):
     sns.set_theme(style="darkgrid")
     hex_plot = sns.jointplot(
         data=df,
@@ -237,8 +235,8 @@ def plot_hex_density(df, model_name, output_dir):
 if __name__ == "__main__":
     # --- Common Setup ---
     gate_set = 'gate_set_ghz_a'
-    data_set_name = 'test_gcn_test_dataset_ghz_a_2025-04-17_22-45-32'  # f'{gate_set}'
-    model_name = 'gcn_test_dataset_ghz_a_2025-04-17_22-45-32'  # f'{gate_set}'
+    data_set_name = 'test_ghz_a_squash'  # f'{gate_set}'
+    model_name = 'demo_gcn_ghz_a_2025-04-19_15-14-17'  # f'{gate_set}'
     color = 'skyblue'
     gnn = True
     rf = False
@@ -246,11 +244,12 @@ if __name__ == "__main__":
     device_config = DeviceConfig()
     device = device_config.device
     path_config = PathConfig()
-    gate_mapping,_ = get_gate_set_and_features_by_name(gate_set)
+    gate_mapping, _ = get_gate_set_and_features_by_name(gate_set)
 
     if rf:
         metrics_rf = run_random_forest_evaluation(gate_set=gate_set, device=device, model_name=model_name,
                                                   path_config=path_config)
     if gnn:
-        metrics_gnn = run_gcn_evaluation(device=device, model_name=model_name,
+        metrics_gnn = run_gcn_evaluation(device=device, model_name=model_name, data_set_name=data_set_name,
+                                         gate_mapping=gate_mapping, color=color,
                                          path_config=path_config)

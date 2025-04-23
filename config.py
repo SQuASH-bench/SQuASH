@@ -91,7 +91,9 @@ def get_model_config_from_path(model_config_path, device):
         with open(model_config_path, 'r') as f:
             config = json.load(f)
             config["device"] = device
-        return config
+            del config["PATHS"]
+            del config["timestamp"]
+        return ModelConfig(**config)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         raise RuntimeError(f"Failed to load model config from '{model_config_path}': {e}")
 
