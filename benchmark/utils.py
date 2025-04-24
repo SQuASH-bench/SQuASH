@@ -45,7 +45,7 @@ def load_gnn_benchmark_model(model_name, search_space, model_config=None, device
     return gnn_model
 
 
-def predict_circuit_performance(circuit, model, gate_set):
+def predict_circuit_performance(circuit, model, gate_set, proxy=False):
     """
     Evaluate the fitness of a circuit using the provided model.
 
@@ -57,7 +57,7 @@ def predict_circuit_performance(circuit, model, gate_set):
     Returns:
         float: The predicted fitness.
     """
-    data_qc = qiskit_to_data_object(circuit=circuit, gate_set=gate_set, num_qubits=model.edge_attr_dim)
+    data_qc = qiskit_to_data_object(circuit=circuit, gate_set=gate_set, num_qubits=model.edge_attr_dim, proxy=proxy)
     with torch.no_grad():
         prediction = model.predict(data_qc)
     return prediction.item()
@@ -98,6 +98,5 @@ def convert_qasm_circuit_into_trainable_pqc(qasm_str):
             qc_new_2.append(operation.__class__(param), qubits, clbits)
         else:
             qc_new_2.append(operation, qubits, clbits)
-
 
     return qc_new_2, params

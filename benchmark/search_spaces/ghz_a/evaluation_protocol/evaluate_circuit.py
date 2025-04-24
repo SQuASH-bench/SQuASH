@@ -66,11 +66,19 @@ def minimize_circ(circuit, params, search_space_config):
 
 
 if __name__ == "__main__":
-    search_space_config = ghz_a_conf
-    model_name = "gcn_augmented_ghz_a"
+    # specify search space
     search_space = "ghz_a"
+    search_space_config = ghz_a_conf
+
+    # specify model
+    model_name = "gcn_proxy_augmented_ghz_a"
+    proxy = True
     model = load_gnn_benchmark_model(model_name, search_space=search_space, device="cpu")
+
+    # specify gate set and features
     gate_set, num_features = get_gate_set_and_features_by_name(search_space)
+
+    # input circuit
     qasm_str = """
     OPENQASM 3.0;
     include "stdgates.inc";
@@ -86,7 +94,7 @@ if __name__ == "__main__":
     print("Performance of untrained input PQC", get_performance(qc))
     print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''")
 
-    prediction = predict_circuit_performance(qasm_str, model, gate_set)
+    prediction = predict_circuit_performance(qasm_str, model, gate_set, proxy=proxy)
     print(f"Predicted performance for the trained PQC: {prediction}")
     print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''")
     trainable_circuit, params = convert_qasm_circuit_into_trainable_pqc(qasm_str)
