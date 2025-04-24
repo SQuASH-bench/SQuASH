@@ -101,5 +101,5 @@ if __name__ == "__main__":
     ground_truth_fidelity_after_training, optimized_circuit = minimize_circ(trainable_circuit, params,
                                                                             search_space_config)
     print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''")
-    print(f"Ground truth performance for the trained PQC: {ground_truth_fidelity_after_training}")
+    print(f"Ground truth performance for the trained PQC: {-ground_truth_fidelity_after_training}")
     print("Ground truth optimized circuit", {optimized_circuit.draw()})

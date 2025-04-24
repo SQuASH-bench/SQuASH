@@ -4,7 +4,6 @@ import torch
 from qiskit import QuantumCircuit
 from qiskit.circuit import CircuitInstruction, Parameter
 from qiskit.circuit.library import IGate
-from qiskit_aer import Aer
 
 from config import get_model_config_from_path, PathConfig
 from evaluate.evaluate_utils import load_gnn_model
