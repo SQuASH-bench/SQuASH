@@ -1,0 +1,10 @@
+{
+  "n_estimators": 325,
+  "max_depth": 30,
+  "min_samples_split": 3,
+  "min_samples_leaf": 3,
+  "max_features": "sqrt",
+  "n_jobs": -1,
+  "batch_size": 64,
+  "metric": "spearman"
+}
