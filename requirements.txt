@@ -60,9 +60,9 @@ stevedore==5.3.0
 symengine==0.13.0
 sympy
 threadpoolctl
-torch==2.4.1
-torch-geometric
-torchaudio==2.4.1
+torch==2.6.0
+torch-geometric==2.6.1
+torchaudio==2.4.7
 torchvision==0.2.1
 tqdm
 typing_extensions
