@@ -80,6 +80,7 @@ def convert_qasm_circuit_into_trainable_pqc(qasm_str):
     # print("____________________QC Converted__________________________", qc_new_1.draw())
 
     qc_new_2 = QuantumCircuit(3)
+    params = []
     param_index = 0
 
     for instruction in qc_new_1.data:
@@ -91,10 +92,12 @@ def convert_qasm_circuit_into_trainable_pqc(qasm_str):
             for p in operation.params:
                 params.append(p)
                 param = Parameter(f'θ{param_index}')
-                new_params.append(param)  # Use the Parameter object
+                new_params.append(param)
                 param_index += 1
 
-            qc_new_2.append(operation.__class__(param), qubits, clbits)
+            new_op = operation.copy()
+            new_op.params = new_params
+            qc_new_2.append(new_op, qubits, clbits)
         else:
             qc_new_2.append(operation, qubits, clbits)
 

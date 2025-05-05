@@ -82,11 +82,30 @@ if __name__ == "__main__":
     qasm_str = """
     OPENQASM 3.0;
     include "stdgates.inc";
+    gate rzz(p0) _gate_q_0, _gate_q_1 {
+      cx _gate_q_0, _gate_q_1;
+      rz(p0) _gate_q_1;
+      cx _gate_q_0, _gate_q_1;
+    }
     qubit[3] q;
-    ry(0.00710119201813939) q[0];
-    rz(0.0075736413922590905) q[1];
-    cx q[0], q[1];
-    cx q[0], q[2];
+    sx q[0];
+    x q[2];
+    cz q[0], q[1];
+    x q[2];
+    sx q[2];
+    sx q[1];
+    rzz(0.008004549097265957) q[0], q[1];
+    cz q[0], q[2];
+    cz q[1], q[0];
+    rz(-0.0001645752713190455) q[0];
+    x q[2];
+    sx q[2];
+    rx(-0.0059563086747590815) q[0];
+    id q[0];
+    rx(-0.008005582434209091) q[1];
+    rx(0.0008744532151137123) q[0];
+    rz(-0.0011058669905589218) q[1];
+    rz(-0.005602781028897132) q[2];
     """
 
     qc = loads(qasm_str)
@@ -101,5 +120,5 @@ if __name__ == "__main__":
     ground_truth_fidelity_after_training, optimized_circuit = minimize_circ(trainable_circuit, params,
                                                                             search_space_config)
     print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''")
-    print(f"Ground truth performance for the trained PQC: {ground_truth_fidelity_after_training}")
+    print(f"Ground truth performance for the trained PQC: {-ground_truth_fidelity_after_training}")
     print("Ground truth optimized circuit", {optimized_circuit.draw()})
