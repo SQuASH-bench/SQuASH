@@ -62,10 +62,9 @@ def predict_circuit_performance(circuit, model, gate_set, proxy=False):
     return prediction.item()
 
 
-def convert_qasm_circuit_into_trainable_pqc(qasm_str):
+def convert_qasm_circuit_into_trainable_pqc(qasm_str, num_qubits):
     qc = loads(qasm_str)
-
-    # print("____________________Initial QC__________________________", qc.draw())
+    #print("____________________Initial QC__________________________", qc.draw())
     new_data = []
     params = []
     for gate in qc.data:
@@ -74,12 +73,12 @@ def convert_qasm_circuit_into_trainable_pqc(qasm_str):
             new_data.append(new_instruction)
         else:
             new_data.append(gate)
-    qc_new_1 = QuantumCircuit(3)
+    qc_new_1 = QuantumCircuit(num_qubits)
     for gate in new_data:
         qc_new_1.append(gate.operation, gate.qubits)
     # print("____________________QC Converted__________________________", qc_new_1.draw())
 
-    qc_new_2 = QuantumCircuit(3)
+    qc_new_2 = QuantumCircuit(num_qubits)
     params = []
     param_index = 0
 

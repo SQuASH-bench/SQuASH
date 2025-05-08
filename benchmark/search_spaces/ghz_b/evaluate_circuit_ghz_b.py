@@ -116,7 +116,7 @@ if __name__ == "__main__":
     prediction = predict_circuit_performance(qasm_str, model, gate_set, proxy=proxy)
     print(f"Predicted performance for the trained PQC: {prediction}")
     print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''")
-    trainable_circuit, params = convert_qasm_circuit_into_trainable_pqc(qasm_str)
+    trainable_circuit, params = convert_qasm_circuit_into_trainable_pqc(qasm_str, search_space_config["num_qubits"])
     ground_truth_fidelity_after_training, optimized_circuit = minimize_circ(trainable_circuit, params,
                                                                             search_space_config)
     print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''")

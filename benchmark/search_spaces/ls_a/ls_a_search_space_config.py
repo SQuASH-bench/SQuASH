@@ -4,7 +4,7 @@ ls_a_conf = {
     "layer_set": ['RyRotationLayer', 'RxRotationLayer'],
     "max_depth": 10,
     "optimizer": "COBYLA",
-    "optimizer_maxiter": 200,
+    "optimization_maxiter_per_circuit": 200,
     "initial_param_min": -0.01,
     "initial_param_max": 0.01,
     #data
