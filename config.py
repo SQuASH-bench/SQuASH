@@ -234,7 +234,7 @@ class PathConfig:
             'optuna_studies': os.path.join(self.base_path, 'surrogate_models/tuning', 'studies'),
             'raw_data': os.path.join(self.base_path, 'data/raw_data/'),
             'gcn_data': os.path.join(self.base_path, 'data/processed_data/', 'gcn_processed_data'),
-            'rf_data': os.path.join(self.base_path, 'data', 'rf_data'),
+            'rf_data': os.path.join(self.base_path, 'data/processed_data/', 'rf_processed_data'),
             #            'test_data': os.path.join(self.base_path, 'data', 'test_data'),
             'trained_models': os.path.join(self.base_path, 'surrogate_models', 'trained_models'),
             'benchmark_search_spaces': os.path.join(self.base_path, 'benchmark', 'search_spaces'),
