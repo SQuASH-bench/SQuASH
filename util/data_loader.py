@@ -103,7 +103,7 @@ def create_data_from_database(db_path="dataset.db", gate_set=None, model=None):
     return data
 
 
-def save_data(path, data=None):
+def save_data(path, data):
     """
     Save processed data to a file using PyTorch's save function.
 
@@ -132,7 +132,7 @@ def load_data(path):
         object: The loaded data object, or None if loading fails.
     """
     try:
-        data = torch.load(path)
+        data = torch.load(path, weights_only=False)
         print(f"Data successfully loaded from {path}")
         return data
     except Exception as e:
