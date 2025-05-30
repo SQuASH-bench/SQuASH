@@ -12,19 +12,138 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 import pickle
 import random
 import torch
 
 import numpy as np
+
+from datetime import datetime
+
+from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from scipy.stats import spearmanr
+from torch_geometric.data import DataLoader
 
 from config import DeviceConfig, PathConfig, get_default_model_config_by_search_space
+from surrogate_models.prepare_dataset.gen_dataset import create_rf_data
 from util import split
+from util.config_utils import get_gate_set_and_features_by_name
 from util.data_loader import load_data, save_data
+
+
+
+def prepare_paths_and_config(search_space: str, device):
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    gate_set, features = get_gate_set_and_features_by_name(f"gate_set_{search_space}")
+    paths = PathConfig().paths
+    model_config = get_default_model_config_by_search_space(
+        model_type="random_forest", search_space=search_space, features=features, device=device
+    )
+    config = vars(model_config)
+    config.update({'PATHS': paths, 'device': device, 'timestamp': timestamp})
+    return config, gate_set, timestamp
+
+
+def prepare_dataset(data_name, data_path, gate_set, search_space, config, timestamp, save_test_data=True):
+    if not os.path.exists(data_path):
+        print(f"[INFO] RF data not found. Generating from raw circuits...")
+        raw_data_path = os.path.join(config['PATHS']['raw_data'], data_name)
+        data = create_rf_data(path=raw_data_path, gate_set=gate_set, gate_set_name=f"gate_set_{search_space}",
+                               proxy=False)
+        if not data:
+            raise ValueError(f"No data generated at: {raw_data_path}")
+        save_data(data_path, data)
+    else:
+        data = load_data(data_path)
+
+    if not data:
+        raise ValueError("[ERROR] Loaded data is empty.")
+
+    train_data, val_data, test_data = split.train_val_test_split(data, random_seed=config['seed'])
+    print(f"[INFO] Train: {len(train_data)}, Val: {len(val_data)}, Test: {len(test_data)}")
+    if save_test_data:
+        save_data(os.path.join(config['PATHS']['rf_data'], f'test_rf_{search_space}_{timestamp}.pt'), test_data)
+    return train_data, val_data, test_data
+
+
+def prepare_dataloaders(train, val, test, batch_size, num_workers):
+    return (
+        DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=num_workers),
+        DataLoader(val, batch_size=batch_size, shuffle=False, num_workers=num_workers),
+        DataLoader(test, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    )
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def set_initial_best_valid_metrics(metric):
+    if metric == 'spearman':
+        return -float('inf')
+    if metric in {'loss', 'r2'}:
+        return float('inf')
+    raise ValueError("Invalid metric. Choose from 'spearman', 'loss', or 'r2'.")
+
+
+def load_best_model(model, path, device):
+    model.load_state_dict(torch.load(path))
+    model.to(device)
+    return model
+
+
+def convert_json_serializable(obj):
+    """
+    Recursively convert non-serializable values (e.g., torch.device) to strings.
+    """
+    if isinstance(obj, dict):
+        return {k: convert_json_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [convert_json_serializable(v) for v in obj]
+    elif isinstance(obj, torch.device):
+        return str(obj)
+    else:
+        return obj
+
+
+def save_json(path, obj):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    obj = convert_json_serializable(obj)
+    with open(path, 'w') as f:
+        json.dump(obj, f, indent=4)
+
+
+def save_results(results, loss_records, search_space, model_logs_path):
+    benchmark_path = os.path.join(model_logs_path, f'rf_{search_space}_benchmark_results.pkl')
+    records_path = os.path.join(model_logs_path, f'rf_{search_space}_records.pkl')
+    with open(benchmark_path, 'wb') as f:
+        pickle.dump(results, f)
+    with open(records_path, 'wb') as f:
+        pickle.dump(loss_records, f)
+
+
+def plot_metrics(file_path, epochs, records, key, ylabel, title):
+    plt.figure(figsize=(12, 6))
+    plt.plot(epochs, records[f'train_{key}'], label=f'Train {ylabel}')
+    plt.plot(epochs, records[f'val_{key}'], label=f'Validation {ylabel}')
+    if key == 'losses':
+        plt.yscale('log')
+    plt.xlabel('Epoch')
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+    print(f"[INFO] {ylabel} plot is saved to {file_path}")
+    plt.savefig(file_path)
+    plt.show()
 
 
 def prepare_data(data):
