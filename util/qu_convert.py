@@ -59,7 +59,7 @@ def qiskit_to_data_object(circuit, init_params=None, gate_set=None, max_params=1
     return tg_qc
 
 
-def process_graph(qasm3_circuit, init_params=None, fidelity=None, gate_set=None, max_params=1, num_qubits=3,
+def process_graph(qasm3_circuit, fidelity=None, gate_set=None, max_params=1, num_qubits=3,
                   proxy=False):
     """
     Process a QASM 3.0 circuit string to create a PyTorch Geometric Data object.
@@ -74,8 +74,7 @@ def process_graph(qasm3_circuit, init_params=None, fidelity=None, gate_set=None,
 
     Args:
         qasm3_circuit (str): OPENQASM 3.0 circuit string.
-        init_params (list, optional): Initial parameters for node processing.
-        fidelity (float, optional): Fitness value to be attached to the Data object.
+        fidelity (float): Fitness value to be attached to the Data object.
         gate_set (list): List of allowed gate names. Must be provided.
         max_params (int, optional): Maximum allowed parameters per gate (default 1).
         num_qubits (int, optional): Number of qubits in the circuit (default 3).
@@ -99,7 +98,7 @@ def process_graph(qasm3_circuit, init_params=None, fidelity=None, gate_set=None,
         proxy = None
 
     graph = convert_dag_to_networkx(dag_circuit)
-    data = create_data_object(graph, init_params=init_params, fidelity=fidelity,
+    data = create_data_object(graph,  fidelity=fidelity,
                               gate_set=gate_set, max_params=max_params, num_qubits=num_qubits, proxy=proxy)
     return data
 
@@ -167,7 +166,7 @@ def convert_dag_to_networkx(dag_circuit: DAGCircuit):
     return (G, gate_types, qubit_indices)
 
 
-def create_data_object(graph, init_params=None, fidelity=None, gate_set=None, max_params=1, num_qubits=3, proxy=None):
+def create_data_object(graph, fidelity=None, gate_set=None, max_params=1, num_qubits=3, proxy=None):
     """
     Create a PyTorch Geometric Data object from a NetworkX graph.
 
@@ -176,8 +175,7 @@ def create_data_object(graph, init_params=None, fidelity=None, gate_set=None, ma
 
     Args:
         graph (tuple): A tuple (G, gate_types, qubit_indices) from convert_dag_to_networkx.
-        init_params (list, optional): List of initial parameters to assign to gate nodes.
-        fidelity (float, optional): Fitness label to attach to the graph.
+        fidelity (float): Fitness label to attach to the graph.
         gate_set (list): List of allowed gate names. Must be provided.
         max_params (int, optional): Maximum number of parameters per gate (default 1).
         num_qubits (int, optional): Number of qubits in the circuit (default 3).
@@ -200,19 +198,6 @@ def create_data_object(graph, init_params=None, fidelity=None, gate_set=None, ma
         raise Exception("Error: The gate_set parameter cannot be None. Please provide a valid gate set.")
 
     G, gate_types, qubit_indices = graph
-
-    # If initial parameters are provided, assign them to gate nodes
-    if init_params is not None:
-        idx = 0
-        for node in sorted(G.nodes()):
-            if node not in qubit_indices:
-                node_data = G.nodes[node]
-                if 'params' in node_data and node_data['params']:
-                    if idx < len(init_params):
-                        node_data['params'] = [init_params[idx]]
-                        idx += 1
-                    else:
-                        node_data['params'] = [0.0]
 
     # Map original qubit indices to consecutive node IDs.
     qubit_index_to_id = {qidx: idx for idx, qidx in enumerate(sorted(qubit_indices))}
@@ -305,21 +290,19 @@ def create_data_object(graph, init_params=None, fidelity=None, gate_set=None, ma
     edge_attr = torch.stack(edge_attrs) if edge_attrs else None
 
     # Attach the fitness label (y) and optional proxy information.
-    if fidelity is not None:
-        if not isinstance(fidelity, (float, int)):
-            raise TypeError("Fidelity must be a float or int value.")
-        y = torch.tensor([fidelity], dtype=torch.float)
-        if proxy is not None:
-            proxy = torch.tensor([proxy], dtype=torch.float)
-            data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y, proxy=proxy)
-        else:
-            data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+    if fidelity is None:
+        raise ValueError("Fidelity must not be None.")
+
+    if not isinstance(fidelity, (float, int)):
+        raise TypeError("Fidelity must be a float or int value.")
+
+    y = torch.tensor([fidelity], dtype=torch.float)
+
+    if proxy is not None:
+        proxy = torch.tensor([proxy], dtype=torch.float)
+        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y, proxy=proxy)
     else:
-        if proxy is not None:
-            proxy = torch.tensor([proxy], dtype=torch.float)
-            data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, proxy=proxy)
-        else:
-            data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr)
+        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
 
     # Attach additional attributes for later use.
     data.num_gate_types = num_gate_types
