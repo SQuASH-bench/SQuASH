@@ -24,10 +24,11 @@ from util.rf_convert import circuit_to_tensor
 def _process_common_args(circuit, gate_set_name):
     """Helper to extract shared processing values."""
     qu_circuit = circuit.get("init_circuit")
-    init_params = None
-    fidelity = circuit.get("fidelity", circuit.get("train_accuracy"))
+    fidelity = circuit.get("fidelity")
+    if fidelity is None:
+        fidelity = circuit.get("train_accuracy")
     num_qubits = 4 if 'ls_a' in gate_set_name else 3
-    return qu_circuit, init_params, fidelity, num_qubits
+    return qu_circuit, fidelity, num_qubits
 
 
 def create_gcn_data(path, gate_set, gate_set_name, proxy=False):
@@ -40,12 +41,11 @@ def create_gcn_data(path, gate_set, gate_set_name, proxy=False):
         qiskit_circuits = get_data(subfolder_path)
         for circuit in qiskit_circuits:
             try:
-                qu_circuit, init_params, fidelity, num_qubits = _process_common_args(
+                qu_circuit, fidelity, num_qubits = _process_common_args(
                     circuit, gate_set_name
                 )
                 processed = process_graph(
                     qu_circuit,
-                    init_params=init_params,
                     fidelity=fidelity,
                     gate_set=gate_set,
                     proxy=proxy,
@@ -68,7 +68,7 @@ def create_rf_data(path, gate_set, gate_set_name):
         i = 0
         for circuit in qiskit_circuits:
             try:
-                qu_circuit, _, fidelity, num_qubits = _process_common_args(
+                qu_circuit, fidelity, num_qubits = _process_common_args(
                     circuit, gate_set, gate_set_name
                 )
                 processed = circuit_to_tensor(qu_circuit, fidelity, gate_set, num_qubits)

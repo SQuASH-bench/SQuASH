@@ -249,7 +249,7 @@ class RegGNN(torch.nn.Module):
         Args:
             model_file (str): Path to the pretrained model file.
         """
-        pretrained_dict = torch.load(model_file, map_location=lambda storage, loc: storage)
+        pretrained_dict = torch.load(model_file, map_location=lambda storage, loc: storage, weights_only=False)
         model_dict = self.gnn.state_dict()
         # Load pretrained weights (allowing missing keys with strict=False).
         self.gnn.load_state_dict(pretrained_dict, strict=False)

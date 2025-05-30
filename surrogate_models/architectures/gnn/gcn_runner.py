@@ -223,7 +223,7 @@ if __name__ == "__main__":
     set_seed(config["runseed"])
     data_name = f"demo_dataset_ghz_a"
     data_path = os.path.join(config['PATHS']['gcn_data'], f'{data_name}.pt')
-    train_data, val_data, test_data = prepare_dataset(data_name, data_path, gate_set, search_space, config.
+    train_data, val_data, test_data = prepare_dataset(data_name, data_path, gate_set, search_space, config,
                                                       timestamp, save_test_data=True)
 
     train_loader, val_loader, test_loader = prepare_dataloaders(
