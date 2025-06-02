@@ -54,7 +54,7 @@ def qiskit_to_data_object(circuit, init_params=None, gate_set=None, max_params=1
         proxy = None
 
     graph = convert_dag_to_networkx(dag_circuit)
-    tg_qc = create_data_object(graph, init_params=init_params, gate_set=gate_set,
+    tg_qc = create_data_object(graph, gate_set=gate_set,
                                max_params=max_params, num_qubits=num_qubits, proxy=proxy)
     return tg_qc
 
@@ -289,20 +289,21 @@ def create_data_object(graph, fidelity=None, gate_set=None, max_params=1, num_qu
 
     edge_attr = torch.stack(edge_attrs) if edge_attrs else None
 
-    # Attach the fitness label (y) and optional proxy information.
-    if fidelity is None:
-        raise ValueError("Fidelity must not be None.")
-
-    if not isinstance(fidelity, (float, int)):
-        raise TypeError("Fidelity must be a float or int value.")
-
-    y = torch.tensor([fidelity], dtype=torch.float)
-
-    if proxy is not None:
-        proxy = torch.tensor([proxy], dtype=torch.float)
-        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y, proxy=proxy)
+    if fidelity is not None:
+        if not isinstance(fidelity, (float, int)):
+            raise TypeError("Fidelity must be a float or int value.")
+        y = torch.tensor([fidelity], dtype=torch.float)
+        if proxy is not None:
+            proxy = torch.tensor([proxy], dtype=torch.float)
+            data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y, proxy=proxy)
+        else:
+            data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
     else:
-        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+        if proxy is not None:
+            proxy = torch.tensor([proxy], dtype=torch.float)
+            data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, proxy=proxy)
+        else:
+            data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr)
 
     # Attach additional attributes for later use.
     data.num_gate_types = num_gate_types
