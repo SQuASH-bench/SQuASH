@@ -1,6 +1,6 @@
 # Quantum Circuit Regression Toolkit
 
-This repository provides code for converting quantum circuits into graph representations, creating datasets, training models (Graph Neural Networks and Random Forests), and tuning hyperparameters. It is designed for users interested in quantum circuit regression tasks.
+This folder provides code for converting quantum circuits into graph representations, creating datasets, training models (Graph Neural Networks and Random Forests), and tuning hyperparameters. It is designed for users interested in quantum circuit regression tasks.
 
 ---
 
@@ -22,17 +22,17 @@ This repository provides code for converting quantum circuits into graph represe
 
 ## Directory Structure
 
-- **config/**  
-  Contains configuration settings for devices, quantum circuit parameters, model hyperparameters, and file paths.
+- **architectures/**  
+  Contains model definitions such as the RegGNN and RandomForest.
 
-- **model/**  
-  Contains model definitions such as the RegGNN used for quantum circuit regression.
+- **prepare_dataset/**  
+  Contains code to convert the raw data into graph format (input for RegGNN) or tensor format (input for RandomForest).
+ 
+- **trained_models/**  
+  Stores models trained from scratch along with their configurations.
 
-- **util/**  
-  Includes:
-  - **Data Loader & Dataset Creation:** Functions to load and split data, create dataset objects from circuit files or a database, and save/load processed data.
-  - **Quantum Circuit Conversion:** Utilities to convert circuits (QPY/QASM) to graph representations (e.g., `process_graph`, `circuit_to_tensor`, `visualize_graph`).
-  - **Miscellaneous Utility Functions:** Functions for hyperparameter tuning, benchmark result saving, etc.
+- **tutorials/**  
+  Includes tutorials to define, train and evaluate surrogate models to predict the performace of a PQC.
 
 - **tuning/**  
   Contains hyperparameter tuning scripts for both GNN and Random Forest models using Optuna.
@@ -45,7 +45,7 @@ This repository provides code for converting quantum circuits into graph represe
 
 ⚙️ Configure Settings (Optional)
 
-You can adjust the structure of surrogate models by modifying configuration files under the `config/` directory. These settings allow for easy customization without changing the core code.
+You can adjust the structure of surrogate models by modifying configuration in the `../config.py`. 
 
 **What you can configure:**
 
@@ -61,11 +61,10 @@ You can adjust the structure of surrogate models by modifying configuration file
 - 📁 **Paths and Storage**  
   Set locations for saving models, logs, and generated data.
 
-> 💡 Tip: Default configurations are automatically loaded, but you can override them by editing the relevant `.json` or `.py` files in `config/`.
 
 
 ### Dataset Creation and Conversion
-- Use utilities in the `util` directory to convert quantum circuits (in QASM 3.0 format) to PyTorch Geometric Data objects.
+- Use utilities in the `../util` directory to convert quantum circuits (in QASM 3.0 format) to PyTorch Geometric Data objects.
 - Example:  
   ```python
   from config import QCConfig
@@ -89,15 +88,8 @@ You can adjust the structure of surrogate models by modifying configuration file
 
 ## Training a Model
 
-Train a GNN or Random Forest model using the provided training scripts.
-
-**Example (for Random Forest):**
-```bash
-python gcn_runner.py
-```
-
-Similarly, use the GNN training script (surrogate_rf.py) to train a RandomForestRegressor model.
-
+Train and evaluate a GNN or Random Forest model using the provided code. Check out the folder `/tutorials`
+to see the examples.
 
 ## Hyperparameter Tuning
 
@@ -108,7 +100,3 @@ Example:
 python tune_gnn.py
 python tune_rf.py
 ```
-
-## Evaluating and Visualizing Results
-
-The training scripts record `MSE`, `Spearman's rho`, and `R2` over epochs. Use the provided plotting functions to visualize performance metrics.
