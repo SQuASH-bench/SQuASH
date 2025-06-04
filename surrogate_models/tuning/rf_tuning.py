@@ -23,9 +23,13 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from scipy.stats import spearmanr
 
+from surrogate_models.architectures.random_forest.random_forest_runner import prepare_paths_and_config, set_seed, \
+    prepare_dataloaders
 from util import split
 from util.data_loader import load_data
 from config import DeviceConfig, get_default_model_config_by_search_space, PathConfig
+from util.split import train_val_test_split
+
 
 
 def prepare_data(data):
@@ -57,7 +61,7 @@ def prepare_data(data):
     return X, y
 
 
-def objective(trial, params, train_data, val_data):
+def objective(trial, config, train_data, val_data):
     """
     Objective function for hyperparameter tuning using Optuna.
 
@@ -69,7 +73,7 @@ def objective(trial, params, train_data, val_data):
 
     Args:
         trial (optuna.trial.Trial): Optuna trial object.
-        params (dict): Dictionary of fixed parameters, including seeds, metric to optimize, etc.
+        config (dict): Dictionary of fixed parameters, including seeds, metric to optimize, etc.
         train_data: Training data, formatted as accepted by `prepare_data()`.
         val_data: Validation data, formatted similarly to train_data.
 
@@ -95,7 +99,7 @@ def objective(trial, params, train_data, val_data):
     rf_model = RandomForestRegressor(
         n_estimators=tuning_params['n_estimators'],
         max_depth=tuning_params['max_depth'],
-        random_state=params['seed'],
+        random_state=config['seed'],
         min_samples_split=tuning_params['min_samples_split'],
         min_samples_leaf=tuning_params['min_samples_leaf'],
         max_features=tuning_params['max_features'],
@@ -118,56 +122,56 @@ def objective(trial, params, train_data, val_data):
     print(f"[Validation] MSE={val_mse:.4f}, R2={val_r2:.4f}, Spearman={val_rho:.4f}")
 
     # Return the appropriate metric based on configuration
-    if params['metric'] == 'spearman':
+    if config['metric'] == 'spearman':
         return val_rho
-    elif params['metric'] == 'mse':
+    elif config['metric'] == 'mse':
         return val_mse
     else:
         raise ValueError("Invalid metric. Supported metrics: 'spearman' or 'mse'.")
 
 
 if __name__ == '__main__':
-    # Initialize device configuration (if needed by other parts of the code)
-    device_config = DeviceConfig()
-    device = device_config.device
+    # define search space
+    search_space = 'ghz_a'
 
-    # Set the model and gate set identifier based on a pre-defined format (e.g., 'gs1')
-    gate_set = 'gs1'
-    model_name = f'random_forest_{gate_set}_mse'
+    # Device configuration: use GPU device if available, otherwise CPU.
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     # Load configuration paths and model parameters
     path_config = PathConfig()
-    model_config = get_default_model_config_by_search_space(model_name, device)
+    model_config = get_default_model_config_by_search_space(f'gcn_{search_space}', device)
 
-    # Convert model configuration to a dictionary and add additional paths
-    params = vars(model_config)
-    params['PATHS'] = path_config.paths
+    # Convert model_config to a dictionary; also add paths from configuration.
+    config, gate_set, timestamp = prepare_paths_and_config(search_space, device)
 
     # Set random seeds for reproducibility
-    random.seed(model_config.seed)
-    np.random.seed(model_config.seed)
-    torch.manual_seed(model_config.seed)
+    set_seed(config["runseed"])
 
-    # Construct the data file path and load data
-    data_path = os.path.join(path_config.paths['rf_data'], f'{gate_set}.pt')
+    # Load dataset using the provided data loader
+    data_name = f"rf_demo_dataset_ghz_a"
+    data_path = os.path.join(config['PATHS']['rf_data'], f'{data_name}.pt')
     data = load_data(data_path)
-    print(f"Data samples: {len(data)}")
-
     if len(data) == 0:
         raise ValueError("Data is empty.")
 
     # Split the data into training, validation, and test sets
-    train_data, val_data, test_data = split.train_val_test_split(
-        data, random_seed=model_config.seed
-    )
+    train_data, val_data, test_data = train_val_test_split(data, train_size=0.8, val_size=0.15, shuffle=True,
+                                                           random_seed=None)
     print(f"Train samples: {len(train_data)}, Validation samples: {len(val_data)}, Test samples: {len(test_data)}")
 
-    # Use partial to bind fixed arguments to the objective function for Optuna
-    objective_with_args = partial(objective, params=params, train_data=train_data, val_data=val_data)
+    # Create DataLoaders for each set
+    train_loader, val_loader, test_loader = prepare_dataloaders(
+        train_data, val_data, test_data,
+        batch_size=config['batch_size'],
+        num_workers=config['num_workers']
+    )
 
-    # Determine optimization direction based on chosen metric ('mse' to minimize, 'spearman' to maximize)
-    direction = 'minimize' if params['metric'] == 'mse' else 'maximize'
-    study_name = f"rf_{params['metric']}_{model_name}"
+    # Use partial to bind fixed arguments to the objective function for Optuna
+    objective_with_args = partial(objective, config=config, train_data=train_data, val_data=val_data)
+
+    # Define study direction based on the optimization metric
+    direction = 'minimize' if config['metric'] == 'mse' else 'maximize'
+    study_name = f"gcn_{config['metric']}"
     storage = f"sqlite:///{os.path.join(path_config.paths['optuna_studies'], study_name)}.db"
 
     # Create or load an existing Optuna study
