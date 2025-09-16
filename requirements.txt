@@ -55,7 +55,7 @@ rustworkx==0.15.1
 scikit-learn
 scipy
 seaborn==0.13.2
-setuptools==75.1.0
+setuptools==78.1.1
 six
 stevedore==5.3.0
 symengine==0.13.0
