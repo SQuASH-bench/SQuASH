@@ -12,7 +12,7 @@ cryptography==44.0.1
 cycler==0.12.1
 dill==0.3.9
 filelock
-fonttools==4.54.1
+fonttools==4.61.0
 frozenlist
 fsspec
 ibm-cloud-sdk-core==3.22.0
